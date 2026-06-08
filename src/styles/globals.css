@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base styles ─────────────────────────────────────────────────────────── */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    tab-size: 4;
+  }
+
+  body {
+    @apply font-sans text-base text-neutral-800 bg-white antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+    min-height: 100vh;
+  }
+
+  /* ── Tipografía base ── */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold leading-tight;
+  }
+
+  p {
+    @apply leading-relaxed;
+  }
+
+  a {
+    @apply text-primary-600 hover:text-primary-700 transition-colors;
+  }
+
+  /* ── Focus visible — accesibilidad ── */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  }
+
+  /* ── Scrollbar personalizada ── */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.neutral.300') transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-neutral-300 rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-neutral-400;
+  }
+
+  /* ── Input nativo reset ── */
+  input[type='search']::-webkit-search-decoration,
+  input[type='search']::-webkit-search-cancel-button,
+  input[type='search']::-webkit-search-results-button,
+  input[type='search']::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+  }
+}
+
+/* ─── Componentes utilitarios ──────────────────────────────────────────────── */
+
+@layer components {
+  /* Layout helpers para el admin */
+  .pt-navbar {
+    padding-top: theme('height.navbar'); /* 60px */
+  }
+
+  .min-h-content {
+    min-height: calc(100vh - theme('height.navbar'));
+  }
+
+  /* Skeleton animation */
+  .skeleton {
+    @apply bg-neutral-200 animate-pulse-soft rounded;
+  }
+
+  /* Truncar en múltiples líneas */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* ─── Utilities personalizadas ─────────────────────────────────────────────── */
+
+@layer utilities {
+  /* Transición suave para la mayoría de propiedades */
+  .transition-smooth {
+    @apply transition-all duration-150 ease-in-out;
+  }
+
+  /* Texto que no se selecciona (para UI chrome) */
+  .no-select {
+    @apply select-none;
+  }
+
+  /* Ocultar scrollbar visualmente pero mantener funcionalidad */
+  .hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
