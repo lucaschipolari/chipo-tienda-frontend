@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Plus, Search, Edit2, Eye,
   Package, TrendingUp, AlertTriangle, ChevronDown, X, Loader2,
@@ -227,6 +228,16 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
   // Auto-completar el SKU de la primera variante desde el SKU del producto
   const productSku = watch('sku')
   const [olfactory, setOlfactory] = useState<OlfactoryProfile>(EMPTY_OLFACTORY)
+  const [imageUrls, setImageUrls] = useState<string[]>([])
+  const [imgInput, setImgInput] = useState('')
+
+  const addImage = () => {
+    const url = imgInput.trim()
+    if (!url) return
+    setImageUrls(prev => prev.includes(url) ? prev : [...prev, url])
+    setImgInput('')
+  }
+  const removeImage = (url: string) => setImageUrls(prev => prev.filter(u => u !== url))
 
   const onSubmit = (values: ProductFormValues) => {
     const payload: CreateProductRequest = {
@@ -248,6 +259,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
         minStockThreshold: v.minStockThreshold,
       })),
       olfactory,
+      imageUrls,
     }
 
     createProduct(payload, { onSuccess: () => onClose() })
@@ -319,6 +331,46 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
         <div>
           <label className={labelCls}>Descripción</label>
           <textarea {...register('description')} rows={3} className={cn(inputCls, 'resize-none')} placeholder="Contá la historia del perfume: inspiración, cuándo usarlo, para quién es…" />
+        </div>
+
+        {/* Imágenes por link (Google Drive u otra URL) */}
+        <div className="rounded-xl border border-neutral-800 p-4">
+          <p className="mb-1 text-xs font-semibold text-gold-400 uppercase tracking-wider">Imágenes</p>
+          <p className="mb-3 text-[11px] text-neutral-600">
+            Pegá el link de una imagen (podés usar el de <b>compartir</b> de Google Drive; se convierte solo).
+            La primera imagen es la principal.
+          </p>
+          <div className="flex gap-2">
+            <input
+              value={imgInput}
+              onChange={e => setImgInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addImage() } }}
+              className={inputCls}
+              placeholder="https://drive.google.com/file/d/…/view"
+            />
+            <button
+              type="button"
+              onClick={addImage}
+              className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-neutral-700 px-3 py-1 text-xs text-neutral-300 hover:border-neutral-500 hover:text-white transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" /> Agregar
+            </button>
+          </div>
+          {imageUrls.length > 0 && (
+            <ul className="mt-3 space-y-1.5">
+              {imageUrls.map((url, i) => (
+                <li key={url} className="flex items-center gap-2 rounded-lg bg-neutral-900/50 px-3 py-1.5">
+                  <span className="text-[10px] uppercase tracking-wider text-neutral-500 shrink-0">
+                    {i === 0 ? 'Principal' : `#${i + 1}`}
+                  </span>
+                  <span className="flex-1 truncate text-xs text-neutral-400">{url}</span>
+                  <button type="button" onClick={() => removeImage(url)} className="text-neutral-600 hover:text-red-400 transition-colors">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <OlfactoryFields onChange={setOlfactory} />
@@ -753,30 +805,46 @@ function ModalShell({ title, onClose, children }: { title: string; onClose: () =
 
 // ─── Status Change Dropdown ───────────────────────────────────────────────────
 
-function StatusMenu({ product, onClose }: { product: ProductListItem; onClose: () => void }) {
+function StatusMenu({ product, anchorRect, onClose }: { product: ProductListItem; anchorRect: DOMRect; onClose: () => void }) {
   const { mutate: changeStatus, isPending } = useChangeProductStatus()
   const options = [
     { value: 'Draft', label: 'Borrador' },
     { value: 'Published', label: 'Publicado' },
     { value: 'Discontinued', label: 'Discontinuado' },
   ]
-  return (
-    <div className="absolute right-0 top-full mt-1 w-44 rounded-xl border border-neutral-800 shadow-xl z-50 py-1" style={{ background: 'var(--surface)' }}>
-      {options.filter(o => o.value !== product.status).map((o) => (
-        <button key={o.value} disabled={isPending}
-          onClick={() => { changeStatus({ id: product.id, status: o.value }); onClose() }}
-          className="w-full text-left px-3 py-2 text-sm text-neutral-400 hover:text-white hover:bg-obsidian-800 transition-colors">
-          {o.label}
-        </button>
-      ))}
-    </div>
+  // Posición fija calculada desde el botón: se sale de cualquier overflow de la tabla.
+  // Si no hay espacio abajo, abre hacia arriba.
+  const MENU_W = 176
+  const MENU_H = 120
+  const openUp = anchorRect.bottom + MENU_H > window.innerHeight
+  const top = openUp ? anchorRect.top - MENU_H - 4 : anchorRect.bottom + 4
+  const left = Math.max(8, anchorRect.right - MENU_W)
+
+  return createPortal(
+    <>
+      <div className="fixed inset-0 z-[60]" onClick={onClose} />
+      <div
+        className="fixed w-44 rounded-xl border border-neutral-800 shadow-xl z-[61] py-1"
+        style={{ background: 'var(--surface)', top, left }}
+      >
+        {options.filter(o => o.value !== product.status).map((o) => (
+          <button key={o.value} disabled={isPending}
+            onClick={() => { changeStatus({ id: product.id, status: o.value }); onClose() }}
+            className="w-full text-left px-3 py-2 text-sm text-neutral-400 hover:text-white hover:bg-obsidian-800 transition-colors">
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </>,
+    document.body,
   )
 }
 
 // ─── Product Row ──────────────────────────────────────────────────────────────
 
 function ProductRow({ product, onEdit }: { product: ProductListItem; onEdit: () => void }) {
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [menuRect, setMenuRect] = useState<DOMRect | null>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
   return (
     <tr className="border-b border-neutral-800/60 hover:bg-obsidian-800/30 transition-colors group">
       <td className="px-4 py-3">
@@ -813,12 +881,13 @@ function ProductRow({ product, onEdit }: { product: ProductListItem; onEdit: () 
           </button>
           <div className="relative">
             <button
-              onClick={() => setMenuOpen(p => !p)}
+              ref={btnRef}
+              onClick={() => setMenuRect(r => r ? null : btnRef.current!.getBoundingClientRect())}
               className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-neutral-600 hover:text-white hover:bg-obsidian-700 transition-colors text-xs opacity-0 group-hover:opacity-100"
             >
               Estado <ChevronDown className="h-3 w-3" />
             </button>
-            {menuOpen && <StatusMenu product={product} onClose={() => setMenuOpen(false)} />}
+            {menuRect && <StatusMenu product={product} anchorRect={menuRect} onClose={() => setMenuRect(null)} />}
           </div>
         </div>
       </td>

@@ -6,7 +6,6 @@ import { useFavoritesStore } from '@/store/favoritesStore'
 import { useCartStore } from '@/store/cartStore'
 import { cn } from '@/utils/helpers/cn'
 import { formatMoney } from '@/utils/helpers/formatMoney'
-import { moodFor, descriptionFor } from './mood'
 import type { ProductListItem } from '@/types/catalog.types'
 
 /**
@@ -39,8 +38,8 @@ export function ProductCard({ product }: { product: ProductListItem }) {
 
   const [justAdded, setJustAdded] = useState(false)
 
-  const mood = moodFor(product.id)
-  const desc = descriptionFor(product.id)
+  const desc = product.description?.trim()
+  const notes = (product.notes ?? []).slice(0, 3)
   const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.basePrice
   const soldOut = product.totalStock === 0
   const canQuickAdd = !soldOut && !!product.defaultVariantId
@@ -96,11 +95,6 @@ export function ProductCard({ product }: { product: ProductListItem }) {
         {/* Luz sutil en hover */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 transition-opacity duration-500 group-hover:opacity-30" />
 
-        {/* Badge emocional */}
-        <span className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/40 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-white/90 backdrop-blur-md">
-          {mood.label}
-        </span>
-
         {/* Favorito */}
         <button
           onClick={(e) => {
@@ -147,19 +141,23 @@ export function ProductCard({ product }: { product: ProductListItem }) {
           </h3>
         </div>
 
-        <p className="line-clamp-2 text-xs leading-relaxed text-neutral-500">{desc}</p>
+        {desc && (
+          <p className="line-clamp-2 text-xs leading-relaxed text-neutral-500">{desc}</p>
+        )}
 
-        {/* Notas */}
-        <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
-          {mood.notes.map((n) => (
-            <span
-              key={n}
-              className="rounded-full bg-white/[0.04] px-2.5 py-0.5 text-[10px] text-neutral-400 ring-1 ring-white/5"
-            >
-              {n}
-            </span>
-          ))}
-        </div>
+        {/* Notas — solo si el producto tiene perfil olfativo cargado */}
+        {notes.length > 0 && (
+          <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
+            {notes.map((n) => (
+              <span
+                key={n}
+                className="rounded-full bg-white/[0.04] px-2.5 py-0.5 text-[10px] text-neutral-400 ring-1 ring-white/5"
+              >
+                {n}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Precio + Agregar */}
         <div className="flex items-center justify-between gap-2 pt-3">

@@ -75,6 +75,8 @@ export interface ProductListItem {
   defaultVariantId?: string
   defaultVariantStock: number
   mainImageUrl?: string
+  description?: string
+  notes?: string[]
   createdAt: string
   updatedAt: string
 }
@@ -102,6 +104,7 @@ export interface CreateProductRequest {
   tags: string[]
   initialVariants: CreateVariantRequest[]
   olfactory?: OlfactoryProfile
+  imageUrls?: string[]
 }
 
 export interface UpdateProductRequest {

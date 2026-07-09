@@ -3,7 +3,6 @@ import { Heart, ShoppingBag, Package, X } from 'lucide-react'
 import { useFavoritesStore } from '@/store/favoritesStore'
 import { formatMoney } from '@/utils/helpers/formatMoney'
 import { Reveal } from '@/components/store/Reveal'
-import { moodFor } from '@/components/store/mood'
 
 /**
  * FavoritesPage — las fragancias guardadas por el comprador.
@@ -61,7 +60,6 @@ export default function FavoritesPage() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
             {favorites.map((fav, i) => {
-              const mood = moodFor(fav.productId)
               return (
                 <Reveal key={fav.productId} delay={(i % 4) * 70}>
                   <Link
@@ -80,9 +78,6 @@ export default function FavoritesPage() {
                           <Package className="h-8 w-8 text-neutral-600" />
                         </div>
                       )}
-                      <span className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/40 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-white/90 backdrop-blur-md">
-                        {mood.label}
-                      </span>
                       <button
                         onClick={(e) => {
                           e.preventDefault()
