@@ -44,4 +44,10 @@ export const productsService = {
 
   updateVariant: (data: UpdateVariantRequest) =>
     httpClient.put<void>(`${BASE}/${data.productId}/variants/${data.variantId}`, data),
+
+  addImage: (productId: string, url: string) =>
+    httpClient.post<{ imageId: string }>(`${BASE}/${productId}/images`, { url }),
+
+  removeImage: (productId: string, imageId: string) =>
+    httpClient.delete<void>(`${BASE}/${productId}/images/${imageId}`),
 }

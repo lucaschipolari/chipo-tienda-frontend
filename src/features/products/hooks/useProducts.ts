@@ -87,3 +87,27 @@ export function useUpdateVariant() {
     },
   })
 }
+
+export function useAddProductImage() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ productId, url }: { productId: string; url: string }) =>
+      productsService.addImage(productId, url),
+    onSuccess: (_r, { productId }) => {
+      qc.invalidateQueries({ queryKey: productKeys.detail(productId) })
+      qc.invalidateQueries({ queryKey: productKeys.lists() })
+    },
+  })
+}
+
+export function useRemoveProductImage() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ productId, imageId }: { productId: string; imageId: string }) =>
+      productsService.removeImage(productId, imageId),
+    onSuccess: (_r, { productId }) => {
+      qc.invalidateQueries({ queryKey: productKeys.detail(productId) })
+      qc.invalidateQueries({ queryKey: productKeys.lists() })
+    },
+  })
+}
