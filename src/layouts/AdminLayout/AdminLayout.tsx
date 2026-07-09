@@ -19,8 +19,8 @@ export function AdminLayout() {
 
   return (
     <div
-      className="min-h-screen bg-neutral-50"
-      style={{ '--sidebar-width': sidebarWidth } as React.CSSProperties}
+      className="min-h-screen"
+      style={{ background: 'var(--bg)', '--sidebar-width': sidebarWidth } as React.CSSProperties}
     >
       {/* Sidebar fijo a la izquierda */}
       <Sidebar />

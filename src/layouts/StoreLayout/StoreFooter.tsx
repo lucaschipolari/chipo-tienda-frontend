@@ -1,55 +1,102 @@
 import { Link } from 'react-router-dom'
+import { Instagram, MessageCircle } from 'lucide-react'
+
+/**
+ * StoreFooter — minimalista y elegante.
+ * Marca · navegación esencial · contacto humano.
+ */
+
+type FooterLink = { label: string; href: string; external?: boolean }
+
+const FOOTER_LINKS: Record<string, FooterLink[]> = {
+  explorar: [
+    { label: 'Toda la colección', href: '/' },
+    { label: 'Favoritos',         href: '/account/favorites' },
+  ],
+  cuenta: [
+    { label: 'Mi perfil',   href: '/account' },
+    { label: 'Mis pedidos', href: '/account/orders' },
+  ],
+  contacto: [
+    { label: 'WhatsApp',  href: 'https://wa.me/543813462606', external: true },
+    { label: 'Instagram', href: 'https://instagram.com/chipo.ar', external: true },
+  ],
+}
 
 export function StoreFooter() {
   return (
-    <footer className="bg-secondary-900 text-secondary-300 mt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div className="col-span-2 md:col-span-1">
-            <span className="text-2xl font-bold text-white">Chipo</span>
-            <p className="mt-3 text-sm leading-relaxed">
-              Tu tienda de confianza para encontrar todo lo que necesitás.
+    <footer className="mt-24 border-t border-white/5">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+        <div className="grid grid-cols-2 gap-10 md:grid-cols-5">
+
+          {/* ── Marca ── */}
+          <div className="col-span-2">
+            <img src="/chipo-logo.svg" alt="Chipo" className="h-12 w-auto" />
+            <p className="mt-4 max-w-[240px] text-sm leading-relaxed text-neutral-500">
+              La fragancia que cuenta tu historia. Perfumes para personas reales,
+              elegidos con criterio y enviados con cuidado.
             </p>
+            <div className="mt-6 flex items-center gap-3">
+              <a
+                href="https://instagram.com/chipo.ar"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram @chipo.ar"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-neutral-400 ring-1 ring-white/10 transition-all duration-300 hover:text-white hover:ring-white/35"
+              >
+                <Instagram className="h-4 w-4" />
+              </a>
+              <a
+                href="https://wa.me/543813462606"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="WhatsApp"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-neutral-400 ring-1 ring-white/10 transition-all duration-300 hover:text-white hover:ring-white/35"
+              >
+                <MessageCircle className="h-4 w-4" />
+              </a>
+            </div>
           </div>
 
-          {/* Tienda */}
-          <div>
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Tienda</h3>
-            <ul className="space-y-2 text-sm">
-              <li><Link to="/catalog" className="hover:text-white transition-colors">Catálogo</Link></li>
-              <li><Link to="/catalog?new=true" className="hover:text-white transition-colors">Novedades</Link></li>
-              <li><Link to="/catalog?discount=true" className="hover:text-white transition-colors">Ofertas</Link></li>
-            </ul>
-          </div>
-
-          {/* Mi cuenta */}
-          <div>
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Mi cuenta</h3>
-            <ul className="space-y-2 text-sm">
-              <li><Link to="/account" className="hover:text-white transition-colors">Mi perfil</Link></li>
-              <li><Link to="/account/orders" className="hover:text-white transition-colors">Mis pedidos</Link></li>
-              <li><Link to="/account/favorites" className="hover:text-white transition-colors">Favoritos</Link></li>
-            </ul>
-          </div>
-
-          {/* Ayuda */}
-          <div>
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Ayuda</h3>
-            <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-white transition-colors">Contacto</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Envíos</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Devoluciones</a></li>
-            </ul>
-          </div>
+          {/* ── Columnas ── */}
+          {(
+            [
+              ['Explorar', FOOTER_LINKS.explorar],
+              ['Tu cuenta', FOOTER_LINKS.cuenta],
+              ['Contacto', FOOTER_LINKS.contacto],
+            ] as const
+          ).map(([title, links]) => (
+            <div key={title}>
+              <h3 className="mb-4 text-[11px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+                {title}
+              </h3>
+              <ul className="space-y-2.5">
+                {links.map((link) => (
+                  <li key={link.label}>
+                    {link.external ? (
+                      <a href={link.href} target="_blank" rel="noreferrer" className="text-sm text-neutral-400 transition-colors duration-300 hover:text-white">
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link to={link.href} className="text-sm text-neutral-400 transition-colors duration-300 hover:text-white">
+                        {link.label}
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        <div className="border-t border-secondary-700 mt-10 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
-          <p>© {new Date().getFullYear()} Chipo. Todos los derechos reservados.</p>
-          <div className="flex gap-4">
-            <a href="#" className="hover:text-white transition-colors">Privacidad</a>
-            <a href="#" className="hover:text-white transition-colors">Términos</a>
-          </div>
+        {/* ── Línea final ── */}
+        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-8 sm:flex-row">
+          <p className="text-xs text-neutral-600">
+            © {new Date().getFullYear()} Chipo · Tucumán, Argentina
+          </p>
+          <p className="text-xs text-neutral-600">
+            @chipo.ar · 381 346 2606
+          </p>
         </div>
       </div>
     </footer>

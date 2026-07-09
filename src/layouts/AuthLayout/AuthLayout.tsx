@@ -1,26 +1,28 @@
-import { Outlet, Link } from 'react-router-dom'
+import { Navigate, Outlet } from 'react-router-dom'
+import { useAuthStore } from '@/store/authStore'
+import { usePermissions } from '@/hooks/usePermissions'
 
 /**
- * AuthLayout — Shell minimalista para Login, Register, etc.
- * Sin navegación, centrado vertical y horizontalmente.
+ * AuthLayout — Wrapper para rutas de autenticación (login, register, etc.)
+ *
+ * Si el usuario ya está autenticado lo redirige automáticamente:
+ * - Roles admin → /admin/dashboard
+ * - Resto → /
+ *
+ * El layout visual (fondo, logo, centrado) lo gestiona cada página
+ * individualmente para tener flexibilidad de diseño.
  */
 export function AuthLayout() {
-  return (
-    <div className="min-h-screen bg-neutral-50 flex flex-col items-center justify-center p-4">
-      {/* Logo */}
-      <Link to="/" className="mb-8 text-3xl font-bold text-primary-600">
-        Chipo
-      </Link>
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const isInitialized   = useAuthStore((s) => s.isInitialized)
+  const { canAccessAdmin } = usePermissions()
 
-      {/* Contenido de la ruta */}
-      <div className="w-full max-w-md">
-        <Outlet />
-      </div>
+  // Esperar a que se intente restaurar la sesión antes de redirigir
+  if (!isInitialized) return null
 
-      {/* Footer mínimo */}
-      <p className="mt-8 text-xs text-neutral-400">
-        © {new Date().getFullYear()} Chipo
-      </p>
-    </div>
-  )
+  if (isAuthenticated) {
+    return <Navigate to={canAccessAdmin ? '/admin/dashboard' : '/'} replace />
+  }
+
+  return <Outlet />
 }

@@ -4,12 +4,11 @@
  * @example
  *   formatCurrency(1234.5, 'ARS')  → "$ 1.234,50"
  *   formatCurrency(1234.5, 'USD')  → "US$ 1,234.50"
- *   formatCurrency(1234.5, 'PEN')  → "S/ 1,234.50"
  */
 export function formatCurrency(
   amount: number,
-  currency = 'PEN',
-  locale = 'es-PE',
+  currency = 'ARS',
+  locale = 'es-AR',
 ): string {
   try {
     return new Intl.NumberFormat(locale, {
@@ -28,13 +27,6 @@ export function formatCurrency(
  */
 export function formatARS(amount: number): string {
   return formatCurrency(amount, 'ARS', 'es-AR')
-}
-
-/**
- * Formatea como PEN (soles peruanos).
- */
-export function formatPEN(amount: number): string {
-  return formatCurrency(amount, 'PEN', 'es-PE')
 }
 
 /**

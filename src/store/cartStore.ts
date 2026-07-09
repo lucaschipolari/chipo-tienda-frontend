@@ -12,6 +12,8 @@ export interface CartItem {
   unitPrice: number
   currency: string
   quantity: number
+  /** Stock disponible al momento de agregar — tope para los controles de cantidad */
+  maxStock?: number
 }
 
 export interface CartTotals {
@@ -40,13 +42,20 @@ interface CartActions {
 
 type CartStore = CartState & CartActions
 
+const HARD_QTY_CAP = 99
+
+function clampQty(quantity: number, maxStock?: number): number {
+  const cap = Math.min(HARD_QTY_CAP, maxStock ?? HARD_QTY_CAP)
+  return Math.min(Math.max(1, quantity), Math.max(1, cap))
+}
+
 // ─── Cálculo de totales ────────────────────────────────────────────────────────
 
 function calculateTotals(
   items: CartItem[],
   couponDiscount: number,
 ): CartTotals {
-  const currency = items[0]?.currency ?? 'PEN'
+  const currency = items[0]?.currency ?? 'ARS'
   const subtotal = items.reduce(
     (sum, item) => sum + item.unitPrice * item.quantity,
     0,
@@ -68,7 +77,7 @@ const DEFAULT_TOTALS: CartTotals = {
   discountAmount: 0,
   shipping: 0,
   total: 0,
-  currency: 'PEN',
+  currency: 'ARS',
 }
 
 // ─── Store ───────────────────────────────────────────────────────────────────
@@ -94,13 +103,17 @@ export const useCartStore = create<CartStore>()(
           if (existing) {
             updatedItems = items.map((i) =>
               i.variantId === newItem.variantId
-                ? { ...i, quantity: i.quantity + (newItem.quantity ?? 1) }
+                ? {
+                    ...i,
+                    maxStock: newItem.maxStock ?? i.maxStock,
+                    quantity: clampQty(i.quantity + (newItem.quantity ?? 1), newItem.maxStock ?? i.maxStock),
+                  }
                 : i,
             )
           } else {
             updatedItems = [
               ...items,
-              { ...newItem, quantity: newItem.quantity ?? 1 },
+              { ...newItem, quantity: clampQty(newItem.quantity ?? 1, newItem.maxStock) },
             ]
           }
 
@@ -136,7 +149,7 @@ export const useCartStore = create<CartStore>()(
             return
           }
           const updatedItems = get().items.map((i) =>
-            i.variantId === variantId ? { ...i, quantity } : i,
+            i.variantId === variantId ? { ...i, quantity: clampQty(quantity, i.maxStock) } : i,
           )
           set(
             {

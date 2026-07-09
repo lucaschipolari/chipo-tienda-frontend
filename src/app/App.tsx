@@ -49,8 +49,8 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   // No renderizar la app hasta que se intente restaurar la sesión
   if (!isInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
-        <div className="h-8 w-8 rounded-full border-2 border-primary-500 border-t-transparent animate-spin" />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+        <div className="h-8 w-8 rounded-full border-2 border-neutral-800 border-t-gold-500 animate-spin" />
       </div>
     )
   }

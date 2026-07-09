@@ -6,18 +6,19 @@ import { useAuthStore } from '@/store/authStore'
  * IMPORTANTE: Esto es solo para la capa de UI (visibilidad de elementos).
  * La autorización real siempre ocurre en el backend.
  *
+ * Roles del sistema (tal como están en la BD):
+ *   SuperAdmin | Admin | Supervisor | Vendedor | Almacen | Finance | Customer
+ *
  * @example
- *   const { hasRole, can, isAdmin } = usePermissions()
- *   if (can('products', 'write')) { ... }
- *   if (hasRole('Admin')) { ... }
+ *   const { hasRole, canManageProducts, isAdmin } = usePermissions()
+ *   if (canManageProducts) { ... }
+ *   if (hasRole('Supervisor')) { ... }
  */
 export function usePermissions() {
   const user = useAuthStore((s) => s.user)
   const roles = user?.roles ?? []
 
-  /**
-   * Verifica si el usuario tiene alguno de los roles especificados.
-   */
+  /** Verifica si el usuario tiene alguno de los roles especificados. */
   const hasRole = (role: string | string[]): boolean => {
     if (Array.isArray(role)) {
       return role.some((r) => roles.includes(r))
@@ -25,38 +26,54 @@ export function usePermissions() {
     return roles.includes(role)
   }
 
-  /**
-   * Convenientes flags de rol.
-   */
-  const isSuperAdmin = hasRole('SuperAdmin')
-  const isAdmin = hasRole(['SuperAdmin', 'Admin'])
-  const isSupervisor = hasRole(['SuperAdmin', 'Admin', 'Supervisor'])
-  const isVendedor = hasRole('Vendedor')
-  const isAlmacen = hasRole('Almacén')
-  const isFinance = hasRole('Finance')
-  const isCustomer = hasRole('Customer')
+  // ─── Flags de rol ──────────────────────────────────────────────────────────
+  const isSuperAdmin  = hasRole('SuperAdmin')
+  const isAdmin       = hasRole(['SuperAdmin', 'Admin'])
+  const isSupervisor  = hasRole(['SuperAdmin', 'Admin', 'Supervisor'])
+  const isVendedor    = hasRole('Vendedor')
+  const isAlmacen     = hasRole('Almacen')   // ← sin tilde, tal como está en la BD
+  const isFinance     = hasRole('Finance')
+  const isCustomer    = hasRole('Customer')
+
+  // ─── Permisos por recurso (reflejan los [Authorize] del backend) ───────────
+
+  /** Puede ver el panel de administración */
+  const canAccessAdmin    = isSuperAdmin || isAdmin || isSupervisor || isVendedor || isAlmacen || isFinance
+
+  /** Puede crear/editar/eliminar productos y categorías */
+  const canManageProducts = isSuperAdmin || isAdmin || isSupervisor
+
+  /** Puede gestionar inventario y ajustar stock */
+  const canManageInventory = isSuperAdmin || isAdmin || isSupervisor || isAlmacen
+
+  /** Puede gestionar usuarios y roles */
+  const canManageUsers    = isSuperAdmin || isAdmin
+
+  /** Puede acceder a reportes financieros */
+  const canViewFinances   = isSuperAdmin || isAdmin || isFinance
 
   /**
    * Verifica si el usuario tiene el permiso "Resource:Action".
-   * Los permisos no están embebidos en el JWT actual — se verifican
-   * por rol. Extender cuando el backend envíe claims de permiso.
+   * Cuando el backend emita claims de permiso en el JWT, reemplazar
+   * esta lógica por lectura directa de los claims.
    */
-  const can = (_resource: string, _action: string): boolean => {
-    // Por ahora la autorización granular se delega al backend.
-    // Los admins tienen acceso a todo en el frontend.
-    return isAdmin
+  const can = (resource: string, _action: string): boolean => {
+    switch (resource) {
+      case 'products':   return canManageProducts
+      case 'categories': return canManageProducts
+      case 'inventory':  return canManageInventory
+      case 'users':      return canManageUsers
+      case 'roles':      return canManageUsers
+      case 'finances':   return canViewFinances
+      default:           return isAdmin
+    }
   }
-
-  /**
-   * Verifica si puede acceder a una sección específica del admin.
-   */
-  const canAccessAdmin = isAdmin || isSupervisor || isVendedor || isAlmacen || isFinance
 
   return {
     roles,
     hasRole,
     can,
-    canAccessAdmin,
+    // Flags simples
     isSuperAdmin,
     isAdmin,
     isSupervisor,
@@ -64,5 +81,11 @@ export function usePermissions() {
     isAlmacen,
     isFinance,
     isCustomer,
+    // Permisos compuestos
+    canAccessAdmin,
+    canManageProducts,
+    canManageInventory,
+    canManageUsers,
+    canViewFinances,
   }
 }

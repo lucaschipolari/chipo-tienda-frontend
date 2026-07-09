@@ -14,7 +14,7 @@ export function RequireAuth() {
   // Mientras se intenta restaurar la sesión (refresh token en vuelo)
   if (!isInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#0A0A0A]">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 rounded-full border-2 border-primary-500 border-t-transparent animate-spin" />
           <p className="text-sm text-neutral-500">Cargando...</p>

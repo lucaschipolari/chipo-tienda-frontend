@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter, Navigate, useParams } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import { AdminLayout } from '@/layouts/AdminLayout'
 import { StoreLayout } from '@/layouts/StoreLayout'
@@ -27,41 +27,50 @@ function withSuspense(Component: React.ComponentType) {
 // ─── Lazy pages — Auth ────────────────────────────────────────────────────────
 
 const LoginPage    = lazy(() => import('@/pages/auth/LoginPage'))
+const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'))
 
 // ─── Lazy pages — Admin ───────────────────────────────────────────────────────
 
 const DashboardPage       = lazy(() => import('@/pages/admin/DashboardPage'))
-
-// Estos módulos se crearán en etapas posteriores — placeholders por ahora
-const ProductsPage        = lazy(() => import('@/pages/admin/DashboardPage'))
-const CategoriesPage      = lazy(() => import('@/pages/admin/DashboardPage'))
-const InventoryPage       = lazy(() => import('@/pages/admin/DashboardPage'))
-const StockMovementsPage  = lazy(() => import('@/pages/admin/DashboardPage'))
-const OrdersPage          = lazy(() => import('@/pages/admin/DashboardPage'))
-const SalesPage           = lazy(() => import('@/pages/admin/DashboardPage'))
-const CustomersPage       = lazy(() => import('@/pages/admin/DashboardPage'))
-const PurchasesPage       = lazy(() => import('@/pages/admin/DashboardPage'))
-const SuppliersPage       = lazy(() => import('@/pages/admin/DashboardPage'))
-const ExpensesPage        = lazy(() => import('@/pages/admin/DashboardPage'))
-const FinancesPage        = lazy(() => import('@/pages/admin/DashboardPage'))
-const ReportsPage         = lazy(() => import('@/pages/admin/DashboardPage'))
-const DiscountsPage       = lazy(() => import('@/pages/admin/DashboardPage'))
-const CouponsPage         = lazy(() => import('@/pages/admin/DashboardPage'))
-const UsersPage           = lazy(() => import('@/pages/admin/DashboardPage'))
-const RolesPage           = lazy(() => import('@/pages/admin/DashboardPage'))
+const UsersPage           = lazy(() => import('@/pages/admin/UsersPage'))
+const RolesPage           = lazy(() => import('@/pages/admin/RolesPage'))
+const ProductsPage        = lazy(() => import('@/pages/admin/ProductsPage'))
+const CategoriesPage      = lazy(() => import('@/pages/admin/CategoriesPage'))
+const InventoryPage       = lazy(() => import('@/pages/admin/InventoryPage'))
+const StockMovementsPage  = lazy(() => import('@/pages/admin/StockMovementsPage'))
+const OrdersPage          = lazy(() => import('@/pages/admin/OrdersAdminPage'))
+const NewOrderPage        = lazy(() => import('@/pages/admin/NewOrderPage'))
+const SalesPage           = lazy(() => import('@/pages/admin/SalesPage'))
+const NewSalePage         = lazy(() => import('@/pages/admin/NewSalePage'))
+const SalesReportsPage    = lazy(() => import('@/pages/admin/SalesReportsPage'))
+const CustomersPage       = lazy(() => import('@/pages/admin/CustomersPage'))
+const NewCustomerPage     = lazy(() => import('@/pages/admin/NewCustomerPage'))
+const PurchasesPage          = lazy(() => import('@/pages/admin/PurchasesPage'))
+const NewPurchaseOrderPage   = lazy(() => import('@/pages/admin/NewPurchaseOrderPage'))
+const SuppliersPage       = lazy(() => import('@/pages/admin/SuppliersPage'))
+const NewSupplierPage     = lazy(() => import('@/pages/admin/NewSupplierPage'))
+const ExpensesPage        = lazy(() => import('@/pages/admin/ExpensesPage'))
+const FinancesPage        = lazy(() => import('@/pages/admin/FinanceDashboardPage'))
+const ReportsPage         = lazy(() => import('@/pages/admin/ReportsPage'))
+const DiscountsPage       = lazy(() => import('@/pages/admin/DiscountsPage'))
+const PromotionsPage      = lazy(() => import('@/pages/admin/PromotionsPage'))
+const CouponsPage         = lazy(() => import('@/pages/admin/CouponsPage'))
 const SettingsPage        = lazy(() => import('@/pages/admin/DashboardPage'))
 
 // ─── Lazy pages — Store ───────────────────────────────────────────────────────
 
 const HomePage         = lazy(() => import('@/pages/store/HomePage'))
-const CatalogPage      = lazy(() => import('@/pages/store/HomePage'))
-const ProductPage      = lazy(() => import('@/pages/store/HomePage'))
-const CartPage         = lazy(() => import('@/pages/store/HomePage'))
-const CheckoutPage     = lazy(() => import('@/pages/store/HomePage'))
-const SearchPage       = lazy(() => import('@/pages/store/HomePage'))
-const AccountPage      = lazy(() => import('@/pages/store/HomePage'))
-const OrderHistoryPage = lazy(() => import('@/pages/store/HomePage'))
-const FavoritesPage    = lazy(() => import('@/pages/store/HomePage'))
+const CartPage         = lazy(() => import('@/pages/store/CartPage'))
+const CheckoutPage     = lazy(() => import('@/pages/store/CheckoutPage'))
+const AccountPage      = lazy(() => import('@/pages/store/AccountPage'))
+const OrderHistoryPage = lazy(() => import('@/pages/store/OrderHistoryPage'))
+const FavoritesPage    = lazy(() => import('@/pages/store/FavoritesPage'))
+
+// Redirige /product/:id (links viejos o ctrl+click) al catálogo con el modal abierto
+function ProductRedirect() {
+  const { id } = useParams()
+  return <Navigate to={`/?p=${id ?? ''}`} replace />
+}
 
 // ─── Error pages ─────────────────────────────────────────────────────────────
 
@@ -75,7 +84,8 @@ export const router = createBrowserRouter([
   {
     element: <AuthLayout />,
     children: [
-      { path: '/login',           element: withSuspense(LoginPage) },
+      { path: '/login',    element: withSuspense(LoginPage) },
+      { path: '/register', element: withSuspense(RegisterPage) },
     ],
   },
 
@@ -101,27 +111,33 @@ export const router = createBrowserRouter([
               { path: '/admin/inventory/movements',  element: withSuspense(StockMovementsPage) },
 
               // Ventas
-              { path: '/admin/orders',      element: withSuspense(OrdersPage) },
-              { path: '/admin/orders/:id',   element: withSuspense(OrdersPage) },
-              { path: '/admin/sales',       element: withSuspense(SalesPage) },
-              { path: '/admin/sales/:id',    element: withSuspense(SalesPage) },
-              { path: '/admin/customers',   element: withSuspense(CustomersPage) },
-              { path: '/admin/customers/:id', element: withSuspense(CustomersPage) },
+              { path: '/admin/orders',           element: withSuspense(OrdersPage) },
+              { path: '/admin/orders/new',       element: withSuspense(NewOrderPage) },
+              { path: '/admin/orders/:id',        element: withSuspense(OrdersPage) },
+              { path: '/admin/sales',            element: withSuspense(SalesPage) },
+              { path: '/admin/sales/new',        element: withSuspense(NewSalePage) },
+              { path: '/admin/sales/reports',    element: withSuspense(SalesReportsPage) },
+              { path: '/admin/customers',        element: withSuspense(CustomersPage) },
+              { path: '/admin/customers/new',    element: withSuspense(NewCustomerPage) },
+              { path: '/admin/customers/:id',     element: withSuspense(CustomersPage) },
 
               // Compras
               { path: '/admin/purchases',        element: withSuspense(PurchasesPage) },
+              { path: '/admin/purchases/new',    element: withSuspense(NewPurchaseOrderPage) },
               { path: '/admin/purchases/:id',     element: withSuspense(PurchasesPage) },
-              { path: '/admin/suppliers',        element: withSuspense(SuppliersPage) },
-              { path: '/admin/suppliers/:id',     element: withSuspense(SuppliersPage) },
+              { path: '/admin/suppliers',             element: withSuspense(SuppliersPage) },
+              { path: '/admin/suppliers/new',      element: withSuspense(NewSupplierPage) },
+              { path: '/admin/suppliers/:id/edit', element: withSuspense(NewSupplierPage) },
 
               // Finanzas
-              { path: '/admin/expenses',  element: withSuspense(ExpensesPage) },
-              { path: '/admin/finances',  element: withSuspense(FinancesPage) },
-              { path: '/admin/reports',   element: withSuspense(ReportsPage) },
+              { path: '/admin/expenses', element: withSuspense(ExpensesPage) },
+              { path: '/admin/finance',  element: withSuspense(FinancesPage) },
+              { path: '/admin/reports',  element: withSuspense(ReportsPage) },
 
               // Promociones
-              { path: '/admin/discounts', element: withSuspense(DiscountsPage) },
-              { path: '/admin/coupons',   element: withSuspense(CouponsPage) },
+              { path: '/admin/discounts',   element: withSuspense(DiscountsPage) },
+              { path: '/admin/promotions', element: withSuspense(PromotionsPage) },
+              { path: '/admin/coupons',    element: withSuspense(CouponsPage) },
 
               // Configuración
               { path: '/admin/users',     element: withSuspense(UsersPage) },
@@ -139,19 +155,21 @@ export const router = createBrowserRouter([
   {
     element: <StoreLayout />,
     children: [
-      // Rutas públicas
+      // Catálogo (= home). El detalle de producto es un modal vía ?p=<id>.
       { path: '/',          element: withSuspense(HomePage) },
-      { path: '/catalog',   element: withSuspense(CatalogPage) },
-      { path: '/product/:id', element: withSuspense(ProductPage) },
-      { path: '/category/:slug', element: withSuspense(CatalogPage) },
-      { path: '/search',    element: withSuspense(SearchPage) },
       { path: '/cart',      element: withSuspense(CartPage) },
+      { path: '/checkout',  element: withSuspense(CheckoutPage) },
+
+      // Redirects de rutas viejas para no romper links existentes
+      { path: '/catalog',        element: <Navigate to="/" replace /> },
+      { path: '/search',         element: <Navigate to="/" replace /> },
+      { path: '/category/:slug', element: <Navigate to="/" replace /> },
+      { path: '/product/:id',    element: <ProductRedirect /> },
 
       // Rutas que requieren login
       {
         element: <RequireCustomer />,
         children: [
-          { path: '/checkout',              element: withSuspense(CheckoutPage) },
           { path: '/account',               element: withSuspense(AccountPage) },
           { path: '/account/orders',        element: withSuspense(OrderHistoryPage) },
           { path: '/account/orders/:id',    element: withSuspense(OrderHistoryPage) },

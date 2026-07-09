@@ -7,6 +7,7 @@ interface UiState {
   sidebarCollapsed: boolean
   theme: Theme
   isMobileMenuOpen: boolean
+  cartDrawerOpen: boolean
 }
 
 interface UiActions {
@@ -15,6 +16,9 @@ interface UiActions {
   setTheme: (theme: Theme) => void
   toggleMobileMenu: () => void
   closeMobileMenu: () => void
+  openCartDrawer: () => void
+  closeCartDrawer: () => void
+  toggleCartDrawer: () => void
 }
 
 type UiStore = UiState & UiActions
@@ -27,6 +31,7 @@ export const useUiStore = create<UiStore>()(
         sidebarCollapsed: false,
         theme: 'light',
         isMobileMenuOpen: false,
+        cartDrawerOpen: false,
 
         // ─── Actions ──────────────────────────────────────────────────
         toggleSidebar: () =>
@@ -51,6 +56,19 @@ export const useUiStore = create<UiStore>()(
 
         closeMobileMenu: () =>
           set({ isMobileMenuOpen: false }, false, 'ui/closeMobileMenu'),
+
+        openCartDrawer: () =>
+          set({ cartDrawerOpen: true }, false, 'ui/openCartDrawer'),
+
+        closeCartDrawer: () =>
+          set({ cartDrawerOpen: false }, false, 'ui/closeCartDrawer'),
+
+        toggleCartDrawer: () =>
+          set(
+            (s) => ({ cartDrawerOpen: !s.cartDrawerOpen }),
+            false,
+            'ui/toggleCartDrawer',
+          ),
       }),
       {
         name: 'chipo_ui',

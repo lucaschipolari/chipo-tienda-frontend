@@ -18,20 +18,35 @@ export function normalizeError(error: AxiosError): ApiError {
   const { status, data } = error.response as AxiosResponse<{
     status?: number
     message?: string
-    errors?: Record<string, string[]>
+    // El backend usa errors tanto para validación ({ Field: string[] }) como
+    // para mensajes de error simples ({ message: string })
+    errors?: Record<string, string | string[]>
     traceId?: string
     title?: string   // fallback para errores de ASP.NET sin middleware
     detail?: string
   }>
 
+  // El ExceptionHandlingMiddleware coloca el mensaje en errors.message para
+  // errores no-validación (404, 403, 409, 422, etc.)
+  const messageFromErrors =
+    typeof data?.errors?.message === 'string' ? data.errors.message : undefined
+
   return {
     status,
     message:
       data?.message ??
+      messageFromErrors ??
       data?.detail ??
       data?.title ??
       getDefaultMessage(status),
-    errors:  data?.errors,
+    // Filtrar el pseudo-campo "message" — no es un error de campo de formulario
+    errors: data?.errors
+      ? (Object.fromEntries(
+          Object.entries(data.errors)
+            .filter(([k]) => k !== 'message')
+            .map(([k, v]) => [k, Array.isArray(v) ? v : [v]]),
+        ) as Record<string, string[]>)
+      : undefined,
     traceId: data?.traceId,
   }
 }
