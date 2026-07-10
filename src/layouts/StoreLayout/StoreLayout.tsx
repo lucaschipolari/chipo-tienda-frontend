@@ -12,7 +12,7 @@ import { ProductQuickView } from '@/components/store/ProductQuickView'
  */
 export function StoreLayout() {
   return (
-    <div className="flex flex-col min-h-screen bg-[#0A0A0A] text-white">
+    <div className="flex flex-col min-h-screen bg-black text-white">
       <StoreHeader />
       <main className="flex-1">
         <Outlet />

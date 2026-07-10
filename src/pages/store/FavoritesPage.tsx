@@ -64,9 +64,9 @@ export default function FavoritesPage() {
                 <Reveal key={fav.productId} delay={(i % 4) * 70}>
                   <Link
                     to={`/product/${fav.productId}`}
-                    className="group relative flex flex-col overflow-hidden rounded-2xl bg-gradient-to-b from-[#161616] to-[#101010] ring-1 ring-white/10 transition-all duration-500 hover:-translate-y-1 hover:ring-white/25"
+                    className="group relative flex flex-col overflow-hidden rounded-2xl bg-black ring-1 ring-white/10 transition-all duration-500 hover:-translate-y-1 hover:ring-white/25"
                   >
-                    <div className="relative aspect-[4/5] overflow-hidden bg-gradient-to-b from-[#1d1d1d] to-[#141414]">
+                    <div className="relative aspect-[4/5] overflow-hidden bg-neutral-950">
                       {fav.imageUrl ? (
                         <img
                           src={fav.imageUrl}

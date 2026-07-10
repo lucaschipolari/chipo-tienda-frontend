@@ -73,10 +73,10 @@ export function ProductCard({ product }: { product: ProductListItem }) {
     <Link
       to={`/product/${product.id}`}
       onClick={handleCardClick}
-      className="group relative flex flex-col overflow-hidden rounded-2xl bg-gradient-to-b from-[#161616] to-[#101010] ring-1 ring-white/10 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.8)] transition-all duration-500 hover:-translate-y-1 hover:ring-white/25 hover:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.95)]"
+      className="group relative flex flex-col overflow-hidden rounded-2xl bg-black ring-1 ring-white/10 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.8)] transition-all duration-500 hover:-translate-y-1 hover:ring-white/25 hover:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.95)]"
     >
       {/* Imagen — relación vertical elegante */}
-      <div className="relative aspect-[4/5] overflow-hidden bg-gradient-to-b from-[#1d1d1d] to-[#141414]">
+      <div className="relative aspect-[4/5] overflow-hidden bg-neutral-950">
         {product.mainImageUrl ? (
           <img
             src={product.mainImageUrl}

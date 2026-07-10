@@ -81,7 +81,7 @@ function Content({ productId, onClose }: { productId: string; onClose: () => voi
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain md:flex-row md:overflow-hidden">
       {/* ── Galería ── */}
-      <div className="shrink-0 bg-gradient-to-b from-[#1d1d1d] to-[#141414] p-4 sm:p-5 md:w-1/2 md:p-6">
+      <div className="shrink-0 bg-neutral-950 p-4 sm:p-5 md:w-1/2 md:p-6">
         <div className="aspect-[4/3] overflow-hidden rounded-2xl ring-1 ring-white/5 sm:aspect-square">
           {main ? (
             <img key={main.url} src={main.url} alt={main.altText ?? product.name} className="h-full w-full object-cover animate-fade-in" />

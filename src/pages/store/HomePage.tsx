@@ -11,7 +11,7 @@ import { Reveal } from '@/components/store/Reveal'
 
 function TrustSection() {
   return (
-    <section className="border-t border-white/5 bg-[#0c0c0c]">
+    <section className="border-t border-white/5 bg-black">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
         <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
           {/* Foto (reemplazable) */}
@@ -98,13 +98,10 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       {/* ── Franja de marca + buscador (el único buscador) ── */}
-      <section className="relative overflow-hidden border-b border-white/5">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(38,38,38,0.85)_0%,transparent_70%)]" aria-hidden />
+      <section className="relative overflow-hidden border-b border-white/5 bg-black">
         <div className="relative mx-auto max-w-3xl px-4 py-6 text-center sm:px-6 sm:py-8">
           <Reveal>
-            <p className="text-[11px] uppercase tracking-[0.4em] text-neutral-400">
-              Chipo · Fragancias
-            </p>
+            <img src="/chipo-logo.svg" alt="Chipo · Fragancias" className="mx-auto h-12 w-auto sm:h-16" />
           </Reveal>
 
           {/* Buscador */}
@@ -150,7 +147,14 @@ export default function HomePage() {
       </section>
 
       {/* ── Catálogo comprable ── */}
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <section className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        {/* Marca de agua del logo — sutil, de fondo */}
+        <img
+          src="/chipo-logo.svg"
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-24 w-[min(85%,760px)] -translate-x-1/2 opacity-[0.035]"
+        />
+        <div className="relative">
         {isLoading ? (
           <div className="flex justify-center py-24">
             <Loader2 className="h-7 w-7 animate-spin text-neutral-600" />
@@ -178,6 +182,7 @@ export default function HomePage() {
             ))}
           </div>
         )}
+        </div>
       </section>
 
       {/* ── Confianza / originalidad ── */}
