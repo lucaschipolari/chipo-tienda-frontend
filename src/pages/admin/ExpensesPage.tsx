@@ -343,9 +343,9 @@ function ExpensesListTab() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-white">Gastos</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="secondary"
             size="sm"
@@ -396,7 +396,7 @@ function ExpensesListTab() {
 
       {/* Table */}
       <div className="bg-obsidian-800 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-700">
               {['Fecha', 'Categoría', 'Descripción', 'Monto', 'Estado', 'Acciones'].map(h => (
@@ -465,7 +465,7 @@ function ExpensesListTab() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
 
       {totalPages > 1 && (

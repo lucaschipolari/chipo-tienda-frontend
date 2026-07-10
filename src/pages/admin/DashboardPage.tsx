@@ -350,7 +350,7 @@ export default function DashboardPage() {
           </div>
         </Card.Header>
         <Card.Body padding="none">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto"><table className="w-full text-sm">
             <thead>
               <tr className="border-b border-neutral-800">
                 {['Pedido', 'Comprador', 'Estado', 'Total'].map(h => (
@@ -398,7 +398,7 @@ export default function DashboardPage() {
                 ))
               )}
             </tbody>
-          </table>
+          </table></div>
         </Card.Body>
       </Card>
 

@@ -144,7 +144,7 @@ export default function DiscountsPage() {
   return (
     <div className="flex flex-col gap-6 p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold text-neutral-100">Descuentos</h1>
         <Button variant="primary" size="md" leftIcon={<Plus size={16} />} onClick={openCreate}>
           Nuevo descuento

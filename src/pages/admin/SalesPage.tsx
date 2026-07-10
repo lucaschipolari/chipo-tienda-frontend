@@ -100,12 +100,12 @@ export default function SalesPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-white">Ventas</h1>
           <p className="text-sm text-neutral-500 mt-0.5">Registro de ventas directas</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" leftIcon={<BarChart2 className="h-4 w-4" />} onClick={() => window.location.href = '/admin/sales/reports'}>
             Reportes
           </Button>
@@ -130,7 +130,7 @@ export default function SalesPage() {
 
       {/* Table */}
       <div className="rounded-2xl border border-neutral-800 overflow-hidden" style={{ background: 'var(--surface)' }}>
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full text-sm">
           <thead className="border-b border-neutral-800">
             <tr>
               <th className="text-left px-4 py-3 text-neutral-500 font-medium">Venta</th>
@@ -187,7 +187,7 @@ export default function SalesPage() {
               ))
             )}
           </tbody>
-        </table>
+        </table></div>
       </div>
 
       {data && data.totalCount > 20 && (

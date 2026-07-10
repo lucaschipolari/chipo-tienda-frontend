@@ -118,7 +118,7 @@ function SalesReportTab() {
 
       {/* Table */}
       <div className="bg-obsidian-800 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-700">
               {['N° Venta','Comprador','Canal','Pago','Subtotal','Descuento','Total','Fecha'].map(h => (
@@ -148,7 +148,7 @@ function SalesReportTab() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
       {totalPages > 1 && (
         <Pagination
@@ -222,7 +222,7 @@ function InventoryReportTab() {
       )}
 
       <div className="bg-obsidian-800 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-700">
               {['SKU','Producto','Variante','Categoría','Stock','Min Stock','Costo Unit.','Valor Total','Estado'].map(h => (
@@ -253,7 +253,7 @@ function InventoryReportTab() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
       {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />}
     </div>
@@ -304,7 +304,7 @@ function PurchasesReportTab() {
       )}
 
       <div className="bg-obsidian-800 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-700">
               {['N° Orden','Proveedor','Estado','Ãtems','Total','Fecha'].map(h => (
@@ -332,7 +332,7 @@ function PurchasesReportTab() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
       {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />}
     </div>
@@ -383,7 +383,7 @@ function ExpensesReportTab() {
       )}
 
       <div className="bg-obsidian-800 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-700">
               {['Categoría','Fecha','Monto','Descripción','Estado'].map(h => (
@@ -408,7 +408,7 @@ function ExpensesReportTab() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
       {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />}
     </div>
@@ -472,7 +472,7 @@ function FinancialReportTab() {
             <div className="px-5 py-4 border-b border-neutral-700">
               <h3 className="text-sm font-semibold text-white">Flujo de Caja</h3>
             </div>
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto"><table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-neutral-700">
                   {['Período','Entradas','Salidas','Balance'].map(h => (
@@ -497,7 +497,7 @@ function FinancialReportTab() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </div>
         </>
       )}
@@ -516,15 +516,15 @@ export default function ReportsPage() {
         <h1 className="text-2xl font-bold text-white">Reportes</h1>
       </div>
 
-      <div className="flex gap-6">
-        {/* Sidebar */}
-        <aside className="w-48 flex-shrink-0">
-          <nav className="space-y-1">
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+        {/* Sidebar — en mobile es una fila de tabs con scroll horizontal */}
+        <aside className="w-full md:w-48 md:flex-shrink-0">
+          <nav className="flex gap-2 overflow-x-auto pb-1 md:block md:space-y-1 md:overflow-visible md:pb-0">
             {TABS.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${
+                className={`shrink-0 whitespace-nowrap md:w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${
                   activeTab === tab.key
                     ? 'bg-gold-500/10 text-gold-400 border border-gold-500/30'
                     : 'text-neutral-400 hover:text-white hover:bg-obsidian-800'
