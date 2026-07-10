@@ -100,19 +100,16 @@ export default function HomePage() {
       {/* ── Franja de marca + buscador (el único buscador) ── */}
       <section className="relative overflow-hidden border-b border-white/5">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(38,38,38,0.85)_0%,transparent_70%)]" aria-hidden />
-        <div className="relative mx-auto max-w-3xl px-4 py-12 text-center sm:px-6 sm:py-16">
+        <div className="relative mx-auto max-w-3xl px-4 py-6 text-center sm:px-6 sm:py-8">
           <Reveal>
-            <p className="mb-3 text-[11px] uppercase tracking-[0.4em] text-neutral-400">
+            <p className="text-[11px] uppercase tracking-[0.4em] text-neutral-400">
               Chipo · Fragancias
             </p>
-            <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-white sm:text-5xl">
-              La fragancia que cuenta tu historia
-            </h1>
           </Reveal>
 
           {/* Buscador */}
           <Reveal delay={120}>
-            <div className="relative mx-auto mt-7 max-w-md">
+            <div className="relative mx-auto mt-4 max-w-md">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
               <input
                 value={search}
