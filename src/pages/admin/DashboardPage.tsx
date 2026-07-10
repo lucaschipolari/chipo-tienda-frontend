@@ -404,7 +404,7 @@ export default function DashboardPage() {
 
       {/* ── Resumen financiero rápido ── */}
       {kpis && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div
             className="rounded-xl p-4 border border-neutral-800 text-center"
             style={{ background: 'var(--surface)' }}

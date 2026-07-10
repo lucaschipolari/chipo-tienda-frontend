@@ -100,7 +100,7 @@ const NAV_GROUPS: NavGroup[] = [
 // ─── Componente ───────────────────────────────────────────────────────────────
 
 export function Sidebar() {
-  const { sidebarCollapsed, toggleSidebar } = useUiStore()
+  const { sidebarCollapsed, toggleSidebar, isMobileMenuOpen, closeMobileMenu } = useUiStore()
   const user = useAuthStore((s) => s.user)
   const location = useLocation()
   const permissions = usePermissions()
@@ -115,127 +115,158 @@ export function Sidebar() {
     return !!permissions[g.permission]
   })
 
-  return (
-    <aside
-      className={cn(
-        'hidden lg:flex flex-col h-screen fixed top-0 left-0 z-sidebar',
-        'border-r border-neutral-800',
-        'transition-all duration-200',
-        sidebarCollapsed ? 'w-[60px]' : 'w-[240px]',
-      )}
-      style={{ background: 'var(--surface)' }}
-    >
-      {/* ── Logo ── */}
+  // Lista de navegación reutilizada por el sidebar de escritorio y el drawer móvil.
+  // `collapsed` solo aplica en escritorio; en móvil siempre va expandido.
+  const renderNav = (collapsed: boolean, onNavigate?: () => void) => (
+    <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 scrollbar-thin">
+      {visibleGroups.map((group, gIdx) => (
+        <div key={gIdx} className="mb-1">
+          {group.title && !collapsed && (
+            <p className="px-5 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-600 select-none">
+              {group.title}
+            </p>
+          )}
+          {group.title && collapsed && (
+            <div className="my-1 mx-3 h-px bg-neutral-800" />
+          )}
+
+          {group.items.map((item) => {
+            const Icon = item.icon
+            const active = isActive(item.href)
+            if (item.permission && !permissions[item.permission]) return null
+
+            return (
+              <NavLink
+                key={item.href}
+                to={item.href}
+                onClick={onNavigate}
+                title={collapsed ? item.label : undefined}
+                className={cn(
+                  'flex items-center gap-3 mx-2 px-3 py-2 rounded-xl',
+                  'text-sm transition-all duration-150 select-none',
+                  active
+                    ? 'bg-gold-500/10 text-gold-400 border border-gold-500/20'
+                    : 'text-neutral-500 hover:text-neutral-200 hover:bg-obsidian-800/80 border border-transparent',
+                  collapsed && 'justify-center px-0 py-2.5',
+                )}
+              >
+                {Icon && (
+                  <Icon
+                    className={cn(
+                      'shrink-0',
+                      collapsed ? 'h-5 w-5' : 'h-4 w-4',
+                      active && 'text-gold-400',
+                    )}
+                  />
+                )}
+                {!collapsed && (
+                  <span className={cn('truncate font-medium', active && 'text-gold-400')}>
+                    {item.label}
+                  </span>
+                )}
+              </NavLink>
+            )
+          })}
+        </div>
+      ))}
+    </nav>
+  )
+
+  const userFooter = (collapsed: boolean) =>
+    user && (
       <div
         className={cn(
-          'flex items-center h-[64px] border-b border-neutral-800 shrink-0',
-          sidebarCollapsed ? 'justify-center px-3' : 'px-5',
+          'shrink-0 border-t border-neutral-800 p-3 flex items-center gap-3',
+          collapsed && 'justify-center',
         )}
       >
-        {!sidebarCollapsed && (
-          <img src="/chipo-logo.svg" alt="Chipo" className="h-8 w-auto" />
+        <Avatar name={user.fullName} size="sm" gold />
+        {!collapsed && (
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white truncate leading-tight">{user.fullName}</p>
+            <p className="text-xs text-neutral-500 truncate">{user.email}</p>
+          </div>
         )}
+      </div>
+    )
+
+  return (
+    <>
+      {/* ── Sidebar escritorio ── */}
+      <aside
+        className={cn(
+          'hidden lg:flex flex-col h-screen fixed top-0 left-0 z-sidebar',
+          'border-r border-neutral-800 transition-all duration-200',
+          sidebarCollapsed ? 'w-[60px]' : 'w-[240px]',
+        )}
+        style={{ background: 'var(--surface)' }}
+      >
+        <div
+          className={cn(
+            'flex items-center h-[64px] border-b border-neutral-800 shrink-0',
+            sidebarCollapsed ? 'justify-center px-3' : 'px-5',
+          )}
+        >
+          {!sidebarCollapsed
+            ? <img src="/chipo-logo.svg" alt="Chipo" className="h-8 w-auto" />
+            : <span className="font-display text-lg font-medium text-white">C</span>}
+          {!sidebarCollapsed && (
+            <button
+              onClick={toggleSidebar}
+              className="ml-auto p-1.5 rounded-lg text-neutral-600 hover:text-white hover:bg-obsidian-800 transition-colors"
+              aria-label="Colapsar sidebar"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
         {sidebarCollapsed && (
-          <span className="font-display text-lg font-medium text-white">C</span>
-        )}
-        {!sidebarCollapsed && (
           <button
             onClick={toggleSidebar}
+            className="mx-auto mt-2 p-1.5 rounded-lg text-neutral-600 hover:text-white hover:bg-obsidian-800 transition-colors"
+            aria-label="Expandir sidebar"
+          >
+            <Menu className="h-4 w-4" />
+          </button>
+        )}
+
+        {renderNav(sidebarCollapsed)}
+        {userFooter(sidebarCollapsed)}
+      </aside>
+
+      {/* ── Drawer móvil ── */}
+      {/* Overlay */}
+      <div
+        onClick={closeMobileMenu}
+        className={cn(
+          'lg:hidden fixed inset-0 z-40 bg-black/60 transition-opacity duration-200',
+          isMobileMenuOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
+        )}
+        aria-hidden
+      />
+      {/* Panel */}
+      <aside
+        className={cn(
+          'lg:hidden fixed top-0 left-0 z-50 flex h-screen w-[260px] max-w-[80%] flex-col',
+          'border-r border-neutral-800 transition-transform duration-200',
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full',
+        )}
+        style={{ background: 'var(--surface)' }}
+      >
+        <div className="flex items-center h-[64px] border-b border-neutral-800 shrink-0 px-5">
+          <img src="/chipo-logo.svg" alt="Chipo" className="h-8 w-auto" />
+          <button
+            onClick={closeMobileMenu}
             className="ml-auto p-1.5 rounded-lg text-neutral-600 hover:text-white hover:bg-obsidian-800 transition-colors"
-            aria-label="Colapsar sidebar"
+            aria-label="Cerrar menú"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-        )}
-      </div>
-
-      {/* ── Toggle colapsado ── */}
-      {sidebarCollapsed && (
-        <button
-          onClick={toggleSidebar}
-          className="mx-auto mt-2 p-1.5 rounded-lg text-neutral-600 hover:text-white hover:bg-obsidian-800 transition-colors"
-          aria-label="Expandir sidebar"
-        >
-          <Menu className="h-4 w-4" />
-        </button>
-      )}
-
-      {/* ── Navegación ── */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 scrollbar-thin">
-        {visibleGroups.map((group, gIdx) => (
-          <div key={gIdx} className="mb-1">
-            {/* Título del grupo */}
-            {group.title && !sidebarCollapsed && (
-              <p className="px-5 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-600 select-none">
-                {group.title}
-              </p>
-            )}
-            {group.title && sidebarCollapsed && (
-              <div className="my-1 mx-3 h-px bg-neutral-800" />
-            )}
-
-            {group.items.map((item) => {
-              const Icon = item.icon
-              const active = isActive(item.href)
-
-              // Filtrar ítems individuales con permiso propio
-              if (item.permission && !permissions[item.permission]) return null
-
-              return (
-                <NavLink
-                  key={item.href}
-                  to={item.href}
-                  title={sidebarCollapsed ? item.label : undefined}
-                  className={cn(
-                    'flex items-center gap-3 mx-2 px-3 py-2 rounded-xl',
-                    'text-sm transition-all duration-150 select-none',
-                    active
-                      ? 'bg-gold-500/10 text-gold-400 border border-gold-500/20'
-                      : 'text-neutral-500 hover:text-neutral-200 hover:bg-obsidian-800/80 border border-transparent',
-                    sidebarCollapsed && 'justify-center px-0 py-2.5',
-                  )}
-                >
-                  {Icon && (
-                    <Icon
-                      className={cn(
-                        'shrink-0',
-                        sidebarCollapsed ? 'h-5 w-5' : 'h-4 w-4',
-                        active && 'text-gold-400',
-                      )}
-                    />
-                  )}
-                  {!sidebarCollapsed && (
-                    <span className={cn('truncate font-medium', active && 'text-gold-400')}>
-                      {item.label}
-                    </span>
-                  )}
-                </NavLink>
-              )
-            })}
-          </div>
-        ))}
-      </nav>
-
-      {/* ── Usuario ── */}
-      {user && (
-        <div
-          className={cn(
-            'shrink-0 border-t border-neutral-800 p-3',
-            'flex items-center gap-3',
-            sidebarCollapsed && 'justify-center',
-          )}
-        >
-          <Avatar name={user.fullName} size="sm" gold />
-          {!sidebarCollapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate leading-tight">
-                {user.fullName}
-              </p>
-              <p className="text-xs text-neutral-500 truncate">{user.email}</p>
-            </div>
-          )}
         </div>
-      )}
-    </aside>
+        {renderNav(false, closeMobileMenu)}
+        {userFooter(false)}
+      </aside>
+    </>
   )
 }

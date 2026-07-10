@@ -76,8 +76,10 @@ export function Navbar() {
         'flex items-center justify-between px-4 gap-4',
         'border-b border-neutral-800',
         'transition-all duration-200',
+        // En mobile arranca pegada a la izquierda; en desktop respeta el ancho del sidebar
+        'left-0 lg:[left:var(--sidebar-width,240px)]',
       )}
-      style={{ left: 'var(--sidebar-width, 240px)', background: 'var(--bg)' }}
+      style={{ background: 'var(--bg)' }}
     >
       {/* ── Izquierda: hamburger + breadcrumb ── */}
       <div className="flex items-center gap-3 min-w-0">

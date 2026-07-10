@@ -287,7 +287,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div>
             <label className={labelCls}>SKU *</label>
             <input {...register('sku')} className={inputCls} placeholder="PRD-001"
@@ -584,7 +584,7 @@ function EditProductModal({ productId, onClose }: { productId: string; onClose: 
                 </select>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 <div>
                   <label className={labelCls}>Precio base *</label>
                   <input {...form.register('basePrice')} type="number" step="0.01" className={inputCls} />
@@ -1011,7 +1011,7 @@ export default function ProductsPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         {[
           { label: 'Total productos',        value: stats.total,     icon: Package,       color: 'text-blue-400'   },
           { label: 'Publicados',             value: stats.published, icon: TrendingUp,    color: 'text-green-400'  },
