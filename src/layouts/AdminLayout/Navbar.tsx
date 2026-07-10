@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Bell, ChevronRight, LogOut, Menu, User } from 'lucide-react'
+import { Bell, ChevronRight, LogOut, Menu, User, Store } from 'lucide-react'
 import { cn } from '@/utils/helpers/cn'
 import { useUiStore } from '@/store/uiStore'
 import { useAuthStore } from '@/store/authStore'
@@ -125,8 +125,18 @@ export function Navbar() {
         </nav>
       </div>
 
-      {/* ── Derecha: notificaciones + usuario ── */}
+      {/* ── Derecha: ver tienda + notificaciones + usuario ── */}
       <div className="flex items-center gap-2 shrink-0">
+        {/* Ir a la tienda pública */}
+        <Link
+          to="/"
+          className="flex items-center gap-1.5 rounded-xl border border-neutral-800 px-2.5 py-1.5 text-xs font-medium text-neutral-400 hover:text-white hover:bg-obsidian-800 transition-colors"
+          title="Ver la tienda"
+        >
+          <Store className="h-4 w-4" />
+          <span className="hidden sm:inline">Ver tienda</span>
+        </Link>
+
         {/* Notificaciones */}
         <button className="relative p-2 rounded-xl text-neutral-500 hover:text-white hover:bg-obsidian-800 transition-colors">
           <Bell className="h-4 w-4" />

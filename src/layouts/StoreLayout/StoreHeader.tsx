@@ -1,17 +1,19 @@
 import { Link } from 'react-router-dom'
-import { Heart, ShoppingCart, User, LogOut, ShoppingBag, ChevronDown } from 'lucide-react'
+import { Heart, ShoppingCart, User, LogOut, ShoppingBag, ChevronDown, LayoutDashboard } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/utils/helpers/cn'
 import { useAuthStore } from '@/store/authStore'
 import { useCartStore, selectCartItemCount } from '@/store/cartStore'
 import { useUiStore } from '@/store/uiStore'
 import { useLogout } from '@/features/auth/hooks/useLogout'
+import { usePermissions } from '@/hooks/usePermissions'
 import { getInitials } from '@/utils/formatters/text'
 
 // ─── Dropdown usuario autenticado ─────────────────────────────────────────────
 
 function UserDropdown() {
   const user = useAuthStore((s) => s.user)
+  const { canAccessAdmin } = usePermissions()
   const { logout, isLoggingOut } = useLogout()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -49,6 +51,12 @@ function UserDropdown() {
             <p className="text-sm font-semibold text-white truncate">{user.fullName}</p>
             <p className="text-xs text-neutral-500 truncate mt-0.5">{user.email}</p>
           </div>
+
+          {canAccessAdmin && (
+            <div className="border-b border-neutral-800 py-1">
+              <DropdownLink to="/admin/dashboard" icon={LayoutDashboard} label="Panel de administración" onClick={() => setOpen(false)} />
+            </div>
+          )}
 
           <div className="py-1">
             <DropdownLink to="/account" icon={User} label="Mi perfil" onClick={() => setOpen(false)} />
@@ -96,6 +104,7 @@ function DropdownLink({
 
 export function StoreHeader() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const { canAccessAdmin } = usePermissions()
   const cartItemCount = useCartStore(selectCartItemCount)
   const openCartDrawer = useUiStore((s) => s.openCartDrawer)
 
@@ -114,6 +123,16 @@ export function StoreHeader() {
 
           {/* ── Acciones ── */}
           <div className="flex items-center gap-1 ml-auto">
+            {canAccessAdmin && (
+              <Link
+                to="/admin/dashboard"
+                className="hidden sm:flex items-center gap-1.5 mr-1 rounded-xl border border-gold-500/30 bg-gold-500/10 px-3 py-1.5 text-xs font-semibold text-gold-400 hover:bg-gold-500/20 transition-colors"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Admin
+              </Link>
+            )}
+
             <Link
               to={isAuthenticated ? '/account/favorites' : '/login'}
               className="p-2 rounded-xl text-neutral-500 hover:text-white hover:bg-obsidian-800 transition-colors"
