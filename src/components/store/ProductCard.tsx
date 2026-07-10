@@ -159,9 +159,9 @@ export function ProductCard({ product }: { product: ProductListItem }) {
           </div>
         )}
 
-        {/* Precio + Agregar */}
-        <div className="flex items-center justify-between gap-2 pt-3">
-          <div className="flex items-baseline gap-2">
+        {/* Precio + Agregar — en mobile se apilan (el botón va full-width abajo) */}
+        <div className="flex flex-col gap-2 pt-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span className="text-sm font-semibold text-white">
               ${formatMoney(product.basePrice)}
             </span>
@@ -177,7 +177,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
             disabled={soldOut}
             aria-label={canQuickAdd ? 'Agregar al carrito' : 'Ver opciones'}
             className={cn(
-              'flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-300',
+              'flex w-full shrink-0 items-center justify-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-300 sm:w-auto',
               soldOut
                 ? 'cursor-not-allowed bg-white/[0.04] text-neutral-600'
                 : justAdded
