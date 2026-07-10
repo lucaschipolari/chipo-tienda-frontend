@@ -33,13 +33,14 @@ export function AdminLayout() {
         className={cn(
           'transition-all duration-200',
           'pt-navbar min-h-content', // compensa altura del navbar
+          'overflow-x-hidden',       // evita scroll horizontal (gráficos/tablas anchas)
           // En desktop: margen izquierdo del ancho del sidebar
           sidebarCollapsed
             ? 'lg:pl-[60px]'
             : 'lg:pl-[240px]',
         )}
       >
-        <div className="p-4 sm:p-6">
+        <div className="min-w-0 p-4 sm:p-6">
           <Outlet />
         </div>
       </main>
