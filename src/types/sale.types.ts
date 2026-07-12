@@ -11,6 +11,9 @@ export interface SaleItem {
   unitPrice: number
   discount: number
   total: number
+  unitCost: number
+  totalCost: number
+  profit: number
   currency: string
 }
 
@@ -25,6 +28,8 @@ export interface Sale {
   subtotal: number
   discountAmount: number
   total: number
+  totalCost: number
+  profit: number
   currency: string
   paymentMethod: string
   notes?: string
@@ -96,6 +101,8 @@ export interface SalesReport {
   to: string
   totalSales: number
   totalRevenue: number
+  totalCost: number
+  totalProfit: number
   averageTicket: number
   revenueVsPreviousPeriod: number
   byDay: DailyRevenue[]

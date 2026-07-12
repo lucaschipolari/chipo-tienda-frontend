@@ -48,8 +48,20 @@ function SaleDetail({ saleId }: { saleId: string }) {
           <p className="text-lg font-mono text-white mt-1">{sale.saleNumber}</p>
         </div>
         <div className="bg-obsidian-900 rounded-xl p-4">
-          <p className="text-xs text-neutral-500">Total</p>
+          <p className="text-xs text-neutral-500">Total cobrado</p>
           <p className="text-lg font-semibold text-gold-400 mt-1">{sale.currency} {formatMoney(sale.total)}</p>
+        </div>
+      </div>
+
+      {/* Costo y ganancia */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-obsidian-900 rounded-xl p-4">
+          <p className="text-xs text-neutral-500">Costo</p>
+          <p className="text-base font-medium text-neutral-300 mt-1">{sale.currency} {formatMoney(sale.totalCost)}</p>
+        </div>
+        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
+          <p className="text-xs text-emerald-400/80">Ganancia</p>
+          <p className="text-lg font-semibold text-emerald-400 mt-1">{sale.currency} {formatMoney(sale.profit)}</p>
         </div>
       </div>
 

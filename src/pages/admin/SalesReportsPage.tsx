@@ -115,7 +115,7 @@ export default function SalesReportsPage() {
       ) : (
         <>
           {/* Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <StatCard
               label="Total ventas"
               value={report.totalSales}
@@ -132,6 +132,21 @@ export default function SalesReportsPage() {
                   {Math.abs(report.revenueVsPreviousPeriod).toFixed(1)}% vs período anterior
                 </span>
               }
+            />
+            <StatCard
+              label="Ganancia real"
+              value={`ARS ${formatMoney(report.totalProfit)}`}
+              icon={<TrendingUp className="h-5 w-5 text-emerald-400" />}
+              detail={
+                <span className="text-xs text-neutral-500">
+                  {report.totalRevenue > 0 ? `${((report.totalProfit / report.totalRevenue) * 100).toFixed(0)}% de margen` : 'Cargá costos para calcular'}
+                </span>
+              }
+            />
+            <StatCard
+              label="Costo total"
+              value={`ARS ${formatMoney(report.totalCost)}`}
+              icon={<DollarSign className="h-5 w-5" />}
             />
             <StatCard
               label="Ticket promedio"

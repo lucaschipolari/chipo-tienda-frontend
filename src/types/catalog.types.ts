@@ -10,6 +10,7 @@ export interface ProductVariant {
   attributes: Record<string, string>
   price?: number
   compareAtPrice?: number
+  cost?: number
   currency: string
   stockQuantity: number
   minStockThreshold: number
@@ -88,6 +89,7 @@ export interface CreateVariantRequest {
   initialStock?: number
   price?: number
   compareAtPrice?: number
+  cost?: number
   minStockThreshold?: number
 }
 
@@ -128,6 +130,7 @@ export interface AddVariantRequest {
   initialStock: number
   price?: number
   compareAtPrice?: number
+  cost?: number
   currency: string
   minStockThreshold: number
 }
@@ -137,6 +140,7 @@ export interface UpdateVariantRequest {
   variantId: string
   price?: number
   compareAtPrice?: number
+  cost?: number
   currency: string
   minStockThreshold: number
   isActive: boolean

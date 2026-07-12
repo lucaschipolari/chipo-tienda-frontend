@@ -190,6 +190,7 @@ const variantSchema = z.object({
   sku:               z.string().min(1, 'SKU requerido'),
   price:             z.coerce.number().min(0).optional(),
   compareAtPrice:    z.coerce.number().min(0).optional(),
+  cost:              z.coerce.number().min(0).optional(),
   initialStock:      z.coerce.number().min(0).default(0),
   minStockThreshold: z.coerce.number().min(0).default(5),
 })
@@ -257,6 +258,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
         initialStock: v.initialStock,
         price: v.price || undefined,
         compareAtPrice: v.compareAtPrice || undefined,
+        cost: v.cost || undefined,
         minStockThreshold: v.minStockThreshold,
       })),
       olfactory,
@@ -427,6 +429,10 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                     <input {...register(`variants.${i}.compareAtPrice`)} type="number" step="0.01" className={inputCls} placeholder="Descuento (opc.)" />
                   </div>
                   <div>
+                    <label className={labelCls}>Costo</label>
+                    <input {...register(`variants.${i}.cost`)} type="number" step="0.01" className={inputCls} placeholder="Tu costo (para ganancia)" />
+                  </div>
+                  <div>
                     <label className={labelCls}>Stock mín.</label>
                     <input {...register(`variants.${i}.minStockThreshold`)} type="number" className={inputCls} placeholder="5" />
                   </div>
@@ -471,6 +477,7 @@ type EditFormValues = z.infer<typeof editSchema>
 const variantEditSchema = z.object({
   price:             z.coerce.number().min(0).optional().or(z.literal('')),
   compareAtPrice:    z.coerce.number().min(0).optional().or(z.literal('')),
+  cost:              z.coerce.number().min(0).optional().or(z.literal('')),
   currency:          z.string().length(3),
   minStockThreshold: z.coerce.number().min(0),
   isActive:          z.boolean(),
@@ -487,7 +494,7 @@ function EditProductModal({ productId, onClose }: { productId: string; onClose: 
 
   const [activeTab, setActiveTab] = useState<'info' | 'variants' | 'images'>('info')
   const [variantMsg, setVariantMsg] = useState<string | null>(null)
-  const [newVar, setNewVar] = useState({ label: '', sku: '', price: '', compareAtPrice: '', stock: '0' })
+  const [newVar, setNewVar] = useState({ label: '', sku: '', price: '', compareAtPrice: '', cost: '', stock: '0' })
   const [olfactory, setOlfactory] = useState<OlfactoryProfile>(EMPTY_OLFACTORY)
 
   const form = useForm<EditFormValues>({
@@ -661,12 +668,13 @@ function EditProductModal({ productId, onClose }: { productId: string; onClose: 
               {/* Agregar tamaño nuevo */}
               <div className="rounded-xl border border-dashed border-neutral-700 p-4">
                 <p className="mb-3 text-xs font-semibold text-gold-400 uppercase tracking-wider">Agregar tamaño</p>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-6">
                   <input value={newVar.label} onChange={e => setNewVar(s => ({ ...s, label: e.target.value }))} className={inputCls} placeholder="Tamaño (5ml)" />
                   <input value={newVar.sku} onChange={e => setNewVar(s => ({ ...s, sku: e.target.value }))} className={inputCls} placeholder="SKU *" />
                   <input value={newVar.stock} onChange={e => setNewVar(s => ({ ...s, stock: e.target.value }))} type="number" className={inputCls} placeholder="Stock" />
                   <input value={newVar.price} onChange={e => setNewVar(s => ({ ...s, price: e.target.value }))} type="number" step="0.01" className={inputCls} placeholder="Precio" />
                   <input value={newVar.compareAtPrice} onChange={e => setNewVar(s => ({ ...s, compareAtPrice: e.target.value }))} type="number" step="0.01" className={inputCls} placeholder="Tachado" />
+                  <input value={newVar.cost} onChange={e => setNewVar(s => ({ ...s, cost: e.target.value }))} type="number" step="0.01" className={inputCls} placeholder="Costo" />
                 </div>
                 <div className="mt-3 flex justify-end">
                   <button
@@ -680,11 +688,12 @@ function EditProductModal({ productId, onClose }: { productId: string; onClose: 
                         initialStock: Number(newVar.stock) || 0,
                         price: newVar.price ? Number(newVar.price) : undefined,
                         compareAtPrice: newVar.compareAtPrice ? Number(newVar.compareAtPrice) : undefined,
+                        cost: newVar.cost ? Number(newVar.cost) : undefined,
                         currency: product?.currency ?? 'ARS',
                         minStockThreshold: 5,
                       }, {
                         onSuccess: () => {
-                          setNewVar({ label: '', sku: '', price: '', compareAtPrice: '', stock: '0' })
+                          setNewVar({ label: '', sku: '', price: '', compareAtPrice: '', cost: '', stock: '0' })
                           setVariantMsg('Tamaño agregado.'); setTimeout(() => setVariantMsg(null), 2500)
                         },
                       })
@@ -780,7 +789,7 @@ function ImagesTab({ productId, images }: { productId: string; images: ProductIm
 function VariantEditRow({
   variant, productId, defaultCurrency, onSave, isSaving,
 }: {
-  variant: { id: string; sku: string; price: number | null; compareAtPrice?: number | null; currency: string; stockQuantity: number; minStockThreshold: number; isActive: boolean; attributes: Record<string, string> }
+  variant: { id: string; sku: string; price: number | null; compareAtPrice?: number | null; cost?: number | null; currency: string; stockQuantity: number; minStockThreshold: number; isActive: boolean; attributes: Record<string, string> }
   productId: string
   defaultCurrency: string
   onSave: (req: UpdateVariantRequest) => void
@@ -791,6 +800,7 @@ function VariantEditRow({
     defaultValues: {
       price:             variant.price ?? undefined,
       compareAtPrice:    variant.compareAtPrice ?? undefined,
+      cost:              variant.cost ?? undefined,
       currency:          variant.currency || defaultCurrency,
       minStockThreshold: variant.minStockThreshold,
       isActive:          variant.isActive,
@@ -805,6 +815,7 @@ function VariantEditRow({
       variantId: variant.id,
       price: values.price ? Number(values.price) : undefined,
       compareAtPrice: values.compareAtPrice ? Number(values.compareAtPrice) : undefined,
+      cost: values.cost ? Number(values.cost) : undefined,
       currency: values.currency,
       minStockThreshold: values.minStockThreshold,
       isActive: values.isActive,
@@ -826,7 +837,7 @@ function VariantEditRow({
         )} />
       </div>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-3 items-end sm:grid-cols-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-3 items-end sm:grid-cols-5">
         <div>
           <label className={labelCls}>Precio (vacío = base)</label>
           <input {...form.register('price')} type="number" step="0.01" className={inputCls} placeholder="Base" />
@@ -834,6 +845,10 @@ function VariantEditRow({
         <div>
           <label className={labelCls}>Precio tachado</label>
           <input {...form.register('compareAtPrice')} type="number" step="0.01" className={inputCls} placeholder="Descuento" />
+        </div>
+        <div>
+          <label className={labelCls}>Costo</label>
+          <input {...form.register('cost')} type="number" step="0.01" className={inputCls} placeholder="Costo" />
         </div>
         <div>
           <label className={labelCls}>Moneda</label>
@@ -846,7 +861,7 @@ function VariantEditRow({
           <label className={labelCls}>Stock mín.</label>
           <input {...form.register('minStockThreshold')} type="number" className={inputCls} />
         </div>
-        <div className="col-span-2 flex justify-end sm:col-span-4">
+        <div className="col-span-2 flex justify-end sm:col-span-5">
           <button type="submit" disabled={isSaving}
             className="px-4 py-1.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-black text-xs font-semibold disabled:opacity-60 transition-colors">
             {isSaving ? 'Guardando...' : 'Guardar variante'}
