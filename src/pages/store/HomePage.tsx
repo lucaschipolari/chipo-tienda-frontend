@@ -97,54 +97,55 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
-      {/* ── Franja de marca + buscador (el único buscador) ── */}
-      <section className="relative overflow-hidden border-b border-white/5 bg-black">
-        <div className="relative mx-auto max-w-3xl px-4 py-6 text-center sm:px-6 sm:py-8">
+      {/* ── Franja de marca (logo) ── */}
+      <section className="border-b border-white/5 bg-black">
+        <div className="mx-auto max-w-3xl px-4 py-6 text-center sm:px-6 sm:py-8">
           <Reveal>
             <img src="/chipo-logo.svg" alt="Chipo · Fragancias" className="mx-auto h-12 w-auto sm:h-16" />
           </Reveal>
-
-          {/* Buscador */}
-          <Reveal delay={120}>
-            <div className="relative mx-auto mt-4 max-w-md">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Buscar tu perfume…"
-                className="w-full rounded-full bg-white/[0.06] py-3 pl-11 pr-4 text-sm text-white ring-1 ring-white/15 placeholder:text-neutral-500 transition-all focus:outline-none focus:ring-white/35"
-              />
-            </div>
-          </Reveal>
-
-          {/* Opciones / categorías debajo del buscador */}
-          <Reveal delay={220}>
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-              <button
-                onClick={() => setCategoryId('')}
-                className={cn(
-                  'rounded-full px-4 py-1.5 text-xs font-medium uppercase tracking-wide ring-1 transition-all duration-300',
-                  !categoryId ? 'bg-white text-black ring-white' : 'text-neutral-300 ring-white/15 hover:text-white hover:ring-white/40',
-                )}
-              >
-                Todo
-              </button>
-              {chips.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setCategoryId(cat.id === categoryId ? '' : cat.id)}
-                  className={cn(
-                    'rounded-full px-4 py-1.5 text-xs font-medium uppercase tracking-wide ring-1 transition-all duration-300',
-                    cat.id === categoryId ? 'bg-white text-black ring-white' : 'text-neutral-300 ring-white/15 hover:text-white hover:ring-white/40',
-                  )}
-                >
-                  {cat.name}
-                </button>
-              ))}
-            </div>
-          </Reveal>
         </div>
       </section>
+
+      {/* ── Buscador + categorías — barra fija bajo el header ── */}
+      <div className="sticky top-16 z-30 border-b border-white/5 bg-black/95 backdrop-blur">
+        <div className="mx-auto max-w-3xl px-4 py-3 sm:px-6">
+          {/* Buscador */}
+          <div className="relative mx-auto max-w-md">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Buscar tu perfume…"
+              className="w-full rounded-full bg-white/[0.06] py-2.5 pl-11 pr-4 text-sm text-white ring-1 ring-white/15 placeholder:text-neutral-500 transition-all focus:outline-none focus:ring-white/35"
+            />
+          </div>
+
+          {/* Categorías — scroll horizontal en mobile, centradas en desktop */}
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-0.5 sm:flex-wrap sm:justify-center sm:overflow-visible">
+            <button
+              onClick={() => setCategoryId('')}
+              className={cn(
+                'shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-medium uppercase tracking-wide ring-1 transition-all duration-300',
+                !categoryId ? 'bg-white text-black ring-white' : 'text-neutral-300 ring-white/15 hover:text-white hover:ring-white/40',
+              )}
+            >
+              Todo
+            </button>
+            {chips.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setCategoryId(cat.id === categoryId ? '' : cat.id)}
+                className={cn(
+                  'shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-medium uppercase tracking-wide ring-1 transition-all duration-300',
+                  cat.id === categoryId ? 'bg-white text-black ring-white' : 'text-neutral-300 ring-white/15 hover:text-white hover:ring-white/40',
+                )}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* ── Catálogo comprable ── */}
       <section className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6">

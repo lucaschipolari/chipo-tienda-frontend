@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Heart, ShoppingCart, User, LogOut, ShoppingBag, ChevronDown, LayoutDashboard } from 'lucide-react'
+import { Heart, ShoppingCart, User, LogOut, ShoppingBag, ChevronDown, LayoutDashboard, Plus } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/utils/helpers/cn'
 import { useAuthStore } from '@/store/authStore'
@@ -124,13 +124,23 @@ export function StoreHeader() {
           {/* ── Acciones ── */}
           <div className="flex items-center gap-1 ml-auto">
             {canAccessAdmin && (
-              <Link
-                to="/admin/dashboard"
-                className="hidden sm:flex items-center gap-1.5 mr-1 rounded-xl border border-gold-500/30 bg-gold-500/10 px-3 py-1.5 text-xs font-semibold text-gold-400 hover:bg-gold-500/20 transition-colors"
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                Admin
-              </Link>
+              <>
+                <Link
+                  to="/admin/sales/new"
+                  className="flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                  title="Registrar una venta"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Venta</span>
+                </Link>
+                <Link
+                  to="/admin/dashboard"
+                  className="hidden sm:flex items-center gap-1.5 mr-1 rounded-xl border border-gold-500/30 bg-gold-500/10 px-3 py-1.5 text-xs font-semibold text-gold-400 hover:bg-gold-500/20 transition-colors"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Admin
+                </Link>
+              </>
             )}
 
             <Link
