@@ -134,6 +134,14 @@ export function StoreHeader() {
                   <span className="hidden sm:inline">Venta</span>
                 </Link>
                 <Link
+                  to="/admin/expenses?new=1"
+                  className="flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 transition-colors"
+                  title="Anotar un gasto"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Gasto</span>
+                </Link>
+                <Link
                   to="/admin/dashboard"
                   className="hidden sm:flex items-center gap-1.5 mr-1 rounded-xl border border-gold-500/30 bg-gold-500/10 px-3 py-1.5 text-xs font-semibold text-gold-400 hover:bg-gold-500/20 transition-colors"
                 >

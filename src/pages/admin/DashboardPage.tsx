@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -12,7 +12,7 @@ import { Badge }   from '@/components/ui/Badge/Badge'
 import { Button }  from '@/components/ui/Button/Button'
 import { useFinanceDashboard } from '@/features/finance/hooks/useFinance'
 import { useOrders }           from '@/features/orders/hooks/useOrders'
-import { useSales }            from '@/features/sales/hooks/useSales'
+import { useSales, useSalesReport } from '@/features/sales/hooks/useSales'
 import { useProducts }         from '@/features/products/hooks/useProducts'
 import { formatMoney } from '@/utils/helpers/formatMoney'
 
@@ -132,6 +132,17 @@ export default function DashboardPage() {
   // Recent sales (for chart data)
   const { data: salesData } = useSales({ page: 1, pageSize: 50 })
 
+  // Ganancia real del período (ventas − costo de productos vendidos)
+  const range = useMemo(() => {
+    const to = new Date()
+    const from = new Date()
+    if (period === 'today') from.setHours(0, 0, 0, 0)
+    else if (period === 'week') from.setDate(from.getDate() - 7)
+    else from.setDate(from.getDate() - 30)
+    return { from: from.toISOString(), to: to.toISOString() }
+  }, [period])
+  const { data: salesReport } = useSalesReport(range.from, range.to)
+
   // Low stock products
   const { data: productsData } = useProducts({ page: 1, pageSize: 100 })
 
@@ -179,7 +190,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── KPI Grid ── */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 xl:grid-cols-5 gap-4">
         <KpiCard
           label="Facturación"
           value={kpis ? fmt(kpis.totalRevenue) : '—'}
@@ -187,6 +198,14 @@ export default function DashboardPage() {
           icon={<DollarSign className="h-4 w-4" />}
           gold
           loading={finLoading}
+        />
+        <KpiCard
+          label="Ganancia real"
+          value={salesReport ? fmt(salesReport.totalProfit) : '—'}
+          sub={salesReport && salesReport.totalRevenue > 0
+            ? `Margen: ${((salesReport.totalProfit / salesReport.totalRevenue) * 100).toFixed(0)}%`
+            : 'Cargá costos'}
+          icon={<TrendingUp className="h-4 w-4 text-emerald-400" />}
         />
         <KpiCard
           label="Ganancia Neta"

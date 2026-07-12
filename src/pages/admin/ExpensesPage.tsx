@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   PieChart, Pie, Cell, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -305,6 +306,17 @@ function ExpensesListTab() {
   const [to, setTo]                 = useState('')
   const [createOpen, setCreateOpen] = useState(false)
   const [catsOpen, setCatsOpen]     = useState(false)
+
+  // Atajo: abrir el modal de nuevo gasto al llegar con ?new=1
+  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setCreateOpen(true)
+      searchParams.delete('new')
+      setSearchParams(searchParams, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [editing, setEditing]       = useState<ExpenseListItem | null>(null)
   const [confirming, setConfirming] = useState<{ id: string; action: 'Paid' | 'Cancelled' } | null>(null)
 
