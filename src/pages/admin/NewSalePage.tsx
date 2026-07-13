@@ -409,6 +409,7 @@ export default function NewSalePage() {
   const createMutation = useCreateSale()
 
   const [customer,    setCustomer]    = useState<CustomerListItem | null>(null)
+  const [buyerName,   setBuyerName]   = useState('')
   const [cart,        setCart]        = useState<CartItem[]>([])
   const [payMethod,   setPayMethod]   = useState<PaymentMethod>('Cash')
   const [channel,     setChannel]     = useState<SaleChannel>('InStore')
@@ -482,6 +483,7 @@ export default function NewSalePage() {
 
     const req: CreateSaleRequest = {
       customerId:    customer?.id,
+      customerName:  customer ? undefined : (buyerName.trim() || undefined),
       items,
       paymentMethod: payMethod,
       channel,
@@ -532,13 +534,25 @@ export default function NewSalePage() {
           {/* Cliente (opcional) */}
           <section className="rounded-2xl border border-neutral-800 p-5" style={{ background: 'var(--surface)' }}>
             <h2 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-              <User className="h-3.5 w-3.5" />Cliente
+              <User className="h-3.5 w-3.5" />Comprador
             </h2>
-            <CustomerSearch
-              selected={customer}
-              onSelect={setCustomer}
-              onClear={() => setCustomer(null)}
+            {/* Nombre libre: no hace falta crear un cliente */}
+            <input
+              value={buyerName}
+              onChange={e => { setBuyerName(e.target.value); if (customer) setCustomer(null) }}
+              placeholder="Nombre o apodo de quien compró (opcional)"
+              className="w-full rounded-xl border border-neutral-700 bg-obsidian-800 px-3 py-2.5 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-neutral-500"
             />
+            <p className="mt-2 text-[11px] text-neutral-600">
+              Con escribir el nombre alcanza — no hace falta crear un cliente. ¿Es un cliente registrado? Buscalo abajo.
+            </p>
+            <div className="mt-3">
+              <CustomerSearch
+                selected={customer}
+                onSelect={(c) => { setCustomer(c); setBuyerName('') }}
+                onClear={() => setCustomer(null)}
+              />
+            </div>
           </section>
 
           {/* Buscar producto */}

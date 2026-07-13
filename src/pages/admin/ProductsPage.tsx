@@ -14,6 +14,7 @@ import {
   useChangeProductStatus, useUpdateVariant, useAddVariant,
   useAddProductImage, useRemoveProductImage,
 } from '@/features/products/hooks/useProducts'
+import { useAdjustStock } from '@/features/inventory/hooks/useInventory'
 import { useCategories, flattenCategories } from '@/features/categories/hooks/useCategories'
 import { cn } from '@/utils/helpers/cn'
 import { formatCurrency } from '@/utils/formatters/currency'
@@ -817,6 +818,10 @@ function VariantEditRow({
 
   const attrs = Object.entries(variant.attributes).map(([k, v]) => `${k}: ${v}`).join(' / ') || 'Variante única'
 
+  // Ajuste de stock (usa el endpoint de inventario)
+  const { mutate: adjustStock, isPending: adjustingStock } = useAdjustStock()
+  const [newStock, setNewStock] = useState(String(variant.stockQuantity))
+
   const onSubmit = (values: VariantEditValues) => {
     onSave({
       productId,
@@ -833,9 +838,27 @@ function VariantEditRow({
   return (
     <div className="rounded-xl border border-neutral-800 p-4">
       <div className="flex items-center justify-between mb-3">
-        <div>
+        <div className="flex-1">
           <p className="text-sm font-medium text-white">{attrs}</p>
-          <p className="text-xs text-neutral-500">SKU: {variant.sku} · Stock: {variant.stockQuantity}</p>
+          <p className="text-xs text-neutral-500">SKU: {variant.sku} · Stock actual: <span className="text-white">{variant.stockQuantity}</span></p>
+          {/* Ajuste de stock real */}
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              type="number"
+              value={newStock}
+              onChange={e => setNewStock(e.target.value)}
+              className="w-24 rounded-lg border border-neutral-700 bg-obsidian-800 px-2 py-1 text-xs text-white"
+              placeholder="Stock"
+            />
+            <button
+              type="button"
+              disabled={adjustingStock || Number(newStock) === variant.stockQuantity}
+              onClick={() => adjustStock({ productId, variantId: variant.id, newQuantity: Number(newStock) || 0, reason: 'Ajuste manual de stock' })}
+              className="rounded-lg border border-neutral-700 px-2.5 py-1 text-xs text-neutral-300 hover:border-emerald-500/50 hover:text-emerald-400 disabled:opacity-40 transition-colors"
+            >
+              {adjustingStock ? 'Guardando…' : 'Fijar stock'}
+            </button>
+          </div>
         </div>
         <Controller control={form.control} name="isActive" render={({ field }) => (
           <label className="flex items-center gap-2 cursor-pointer text-xs text-neutral-400">

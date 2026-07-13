@@ -6,6 +6,15 @@ export const inventoryKeys = {
   all: ['inventory'] as const,
   movements: (params: GetMovementsParams) => [...inventoryKeys.all, 'movements', params] as const,
   lowStock: () => [...inventoryKeys.all, 'low-stock'] as const,
+  valuation: () => [...inventoryKeys.all, 'valuation'] as const,
+}
+
+export function useStockValuation() {
+  return useQuery({
+    queryKey: inventoryKeys.valuation(),
+    queryFn: () => inventoryService.getValuation(),
+    staleTime: 60_000,
+  })
 }
 
 export function useStockMovements(params: GetMovementsParams = {}) {

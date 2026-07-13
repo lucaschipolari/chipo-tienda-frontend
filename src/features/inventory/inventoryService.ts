@@ -20,4 +20,14 @@ export const inventoryService = {
 
   adjustStock: (data: AdjustStockRequest) =>
     httpClient.post<void>(`${BASE}/adjust`, data),
+
+  getValuation: () =>
+    httpClient.get<StockValuation>(`${BASE}/valuation`),
+}
+
+export interface StockValuation {
+  totalCostValue: number
+  totalRetailValue: number
+  totalUnits: number
+  variantsWithoutCost: number
 }

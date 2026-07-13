@@ -60,6 +60,7 @@ export interface CreateSaleItemRequest {
 
 export interface CreateSaleRequest {
   customerId?: string
+  customerName?: string
   items: CreateSaleItemRequest[]
   paymentMethod: string
   channel: SaleChannel

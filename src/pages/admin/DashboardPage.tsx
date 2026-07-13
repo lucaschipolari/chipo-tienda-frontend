@@ -13,6 +13,7 @@ import { Button }  from '@/components/ui/Button/Button'
 import { useFinanceDashboard } from '@/features/finance/hooks/useFinance'
 import { useOrders }           from '@/features/orders/hooks/useOrders'
 import { useSales, useSalesReport } from '@/features/sales/hooks/useSales'
+import { useStockValuation } from '@/features/inventory/hooks/useInventory'
 import { useProducts }         from '@/features/products/hooks/useProducts'
 import { formatMoney } from '@/utils/helpers/formatMoney'
 
@@ -156,6 +157,9 @@ export default function DashboardPage() {
   }, [period, customFrom, customTo])
   const { data: salesReport } = useSalesReport(range.from, range.to)
 
+  // Capital invertido en stock (costo × stock)
+  const { data: valuation } = useStockValuation()
+
   // Low stock products
   const { data: productsData } = useProducts({ page: 1, pageSize: 100 })
 
@@ -220,7 +224,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── KPI Grid ── */}
-      <div className="grid grid-cols-2 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
         <KpiCard
           label="Facturación"
           value={kpis ? fmt(kpis.totalRevenue) : '—'}
@@ -258,6 +262,14 @@ export default function DashboardPage() {
           sub={kpis ? `Compras: ${fmt(kpis.totalCosts)}` : undefined}
           icon={<CreditCard className="h-4 w-4" />}
           loading={finLoading}
+        />
+        <KpiCard
+          label="Capital en stock"
+          value={valuation ? fmt(valuation.totalCostValue) : '—'}
+          sub={valuation
+            ? `${valuation.totalUnits} u. · vale ${fmt(valuation.totalRetailValue)}${valuation.variantsWithoutCost > 0 ? ` · ${valuation.variantsWithoutCost} sin costo` : ''}`
+            : undefined}
+          icon={<Package className="h-4 w-4" />}
         />
       </div>
 
