@@ -202,6 +202,7 @@ const productSchema = z.object({
   basePrice:       z.coerce.number().min(0, 'Precio debe ser ≥ 0'),
   currency:        z.string().length(3, 'Moneda inválida'),
   compareAtPrice:  z.coerce.number().min(0).optional().or(z.literal('')),
+  cost:            z.coerce.number().min(0).optional().or(z.literal('')),
   description:     z.string().optional(),
   isFeatured:      z.boolean().default(false),
   variants:        z.array(variantSchema).min(1, 'Agregá al menos una variante'),
@@ -258,7 +259,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
         initialStock: v.initialStock,
         price: v.price || undefined,
         compareAtPrice: v.compareAtPrice || undefined,
-        cost: v.cost || undefined,
+        cost: v.cost || (values.cost ? Number(values.cost) : undefined),
         minStockThreshold: v.minStockThreshold,
       })),
       olfactory,
@@ -316,10 +317,14 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div>
             <label className={labelCls}>Precio tachado (opcional)</label>
             <input {...register('compareAtPrice')} type="number" step="0.01" className={inputCls} placeholder="Precio original" />
+          </div>
+          <div>
+            <label className={labelCls}>Costo (para ganancia)</label>
+            <input {...register('cost')} type="number" step="0.01" className={inputCls} placeholder="Lo que te costó a vos" />
           </div>
           <div className="flex flex-col justify-end">
             <label className="flex items-center gap-2 cursor-pointer">
@@ -330,6 +335,9 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
             </label>
           </div>
         </div>
+        <p className="-mt-3 text-[11px] text-neutral-600">
+          El costo no se calcula solo: es lo que pagás vos por el producto. La ganancia = precio de venta − costo. En decants podés poner un costo distinto por tamaño abajo.
+        </p>
 
         <div>
           <label className={labelCls}>Descripción</label>
