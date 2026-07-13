@@ -179,11 +179,11 @@ function ProductSearch({ onAdd, currency }: { onAdd: (item: CartItem) => void; c
   const debounced = useDebounceValue(query)
   const wrapRef   = useRef<HTMLDivElement>(null)
 
-  // Búsqueda de productos (lista)
+  // Búsqueda de productos (lista). Sin filtro de estado: el admin puede vender
+  // también productos en borrador (ej. accesorios de empaque ocultos de la tienda).
   const { data: prodData } = useProducts({
     search: debounced || undefined,
     pageSize: 10,
-    status: 'Published',
   })
 
   // Detalle completo del producto (con variantes y stock actualizado)

@@ -83,7 +83,10 @@ export default function HomePage() {
   const debounced = useDebounce(search, 300)
 
   const { data: categories } = useCategories()
-  const chips = categories ? flattenCategories(categories) : []
+  // "Empaque" es una categoría interna (accesorios) — no se muestra en la tienda.
+  const chips = categories
+    ? flattenCategories(categories).filter(c => c.name.trim().toLowerCase() !== 'empaque')
+    : []
 
   const { data, isLoading } = useProducts({
     page: 1,
