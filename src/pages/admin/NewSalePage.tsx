@@ -24,6 +24,7 @@ import { Badge }   from '@/components/ui/Badge/Badge'
 import { cn }      from '@/utils/helpers/cn'
 import { useCustomers } from '@/features/customers/hooks/useCustomers'
 import { useProducts, useProduct } from '@/features/products/hooks/useProducts'
+import { useCategories, flattenCategories } from '@/features/categories/hooks/useCategories'
 import { useCreateSale } from '@/features/sales/hooks/useSales'
 import type { CustomerListItem }    from '@/types/customer.types'
 import type { ProductListItem, ProductVariant } from '@/types/catalog.types'
@@ -213,6 +214,7 @@ function ProductSearch({ onAdd, currency }: { onAdd: (item: CartItem) => void; c
     setQuery(p.name)
     setOpen(false)
   }
+  // (PackagingQuickAdd usa onAdd directamente, definido fuera)
 
   function handleAddVariant(variant: ProductVariant) {
     if (!selectedBase) return
@@ -353,6 +355,49 @@ function ProductSearch({ onAdd, currency }: { onAdd: (item: CartItem) => void; c
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Empaque: botones rápidos ─────────────────────────────────────────────────
+
+function PackagingQuickAdd({ onAdd }: { onAdd: (item: CartItem) => void }) {
+  const { data: categories } = useCategories(true)
+  const empaqueId = categories
+    ? flattenCategories(categories).find(c => c.name.trim().toLowerCase() === 'empaque')?.id
+    : undefined
+  const { data } = useProducts({ categoryId: empaqueId, pageSize: 20 })
+  const items = (data?.items ?? []).filter(p => p.defaultVariantId)
+  if (!empaqueId || items.length === 0) return null
+
+  return (
+    <div className="mt-4 border-t border-neutral-800 pt-4">
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+        Empaque (agregar rápido)
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {items.map(p => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => onAdd({
+              key:            `${p.id}-${p.defaultVariantId}`,
+              productId:      p.id,
+              variantId:      p.defaultVariantId!,
+              productName:    p.name,
+              sku:            p.sku,
+              attributes:     {},
+              unitPrice:      p.basePrice,
+              quantity:       1,
+              discount:       0,
+              stockAvailable: p.defaultVariantStock,
+            })}
+            className="inline-flex items-center gap-1 rounded-full border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 hover:border-emerald-500/50 hover:text-emerald-400 transition-colors"
+          >
+            <Plus className="h-3 w-3" /> {p.name}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -502,6 +547,7 @@ export default function NewSalePage() {
               <Package className="h-3.5 w-3.5" />Agregar producto
             </h2>
             <ProductSearch onAdd={addToCart} currency={currency} />
+            <PackagingQuickAdd onAdd={addToCart} />
           </section>
 
           {/* Carrito */}
