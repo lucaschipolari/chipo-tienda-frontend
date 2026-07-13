@@ -9,6 +9,7 @@ export interface StatCardProps {
   icon?: React.ReactNode
   className?: string
   gold?: boolean           // destacar con borde dorado
+  green?: boolean          // destacar el valor en verde (ganancias)
   loading?: boolean
 }
 
@@ -20,6 +21,7 @@ export function StatCard({
   icon,
   className,
   gold = false,
+  green = false,
   loading = false,
 }: StatCardProps) {
   const hasPositiveDelta = delta !== undefined && delta > 0
@@ -68,7 +70,7 @@ export function StatCard({
       <p
         className={cn(
           'text-3xl font-bold leading-none mb-2',
-          gold ? 'text-gold-gradient' : 'text-white',
+          green ? 'text-emerald-400' : gold ? 'text-gold-gradient' : 'text-white',
         )}
       >
         {value}

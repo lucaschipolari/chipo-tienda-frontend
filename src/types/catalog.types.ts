@@ -78,6 +78,7 @@ export interface ProductListItem {
   mainImageUrl?: string
   description?: string
   notes?: string[]
+  cost?: number
   createdAt: string
   updatedAt: string
 }

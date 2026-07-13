@@ -964,6 +964,16 @@ function ProductRow({ product, onEdit }: { product: ProductListItem; onEdit: () 
           <p className="text-xs text-neutral-500 line-through">{formatCurrency(product.compareAtPrice, product.currency)}</p>
         )}
       </td>
+      <td className="px-4 py-3">
+        {product.cost != null ? (
+          <>
+            <p className="text-sm text-neutral-300">{formatCurrency(product.cost, product.currency)}</p>
+            <p className="text-xs text-emerald-400">+{formatCurrency(product.basePrice - product.cost, product.currency)}</p>
+          </>
+        ) : (
+          <span className="text-xs text-neutral-600">Sin costo</span>
+        )}
+      </td>
       <td className="px-4 py-3"><StockBadge stock={product.totalStock} /></td>
       <td className="px-4 py-3 text-sm text-neutral-400">{product.variantCount}</td>
       <td className="px-4 py-3"><StatusBadge status={product.status} /></td>
@@ -1092,7 +1102,7 @@ export default function ProductsPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-neutral-800 bg-obsidian-800/50">
-                {['Producto', 'Categoría', 'Precio', 'Stock', 'Variantes', 'Estado', ''].map((h) => (
+                {['Producto', 'Categoría', 'Precio', 'Costo / Ganancia', 'Stock', 'Variantes', 'Estado', ''].map((h) => (
                   <th key={h} className="px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>

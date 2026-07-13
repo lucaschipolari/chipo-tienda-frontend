@@ -18,18 +18,20 @@ import { formatMoney } from '@/utils/helpers/formatMoney'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-type Period = 'today' | 'week' | 'month'
+type Period = 'today' | 'week' | 'month' | 'custom'
 
 const PERIOD_MAP: Record<Period, string> = {
   today: 'today',
   week:  'week',
   month: 'month',
+  custom: 'custom',
 }
 
 const PERIOD_LABELS: Record<Period, string> = {
   today: 'Hoy',
   week:  'Semana',
   month: 'Mes',
+  custom: 'Personalizado',
 }
 
 function fmt(n: number) {
@@ -50,10 +52,11 @@ interface KpiProps {
   icon: React.ReactNode
   trend?: number
   gold?: boolean
+  green?: boolean
   loading?: boolean
 }
 
-function KpiCard({ label, value, sub, icon, trend, gold, loading }: KpiProps) {
+function KpiCard({ label, value, sub, icon, trend, gold, green, loading }: KpiProps) {
   return (
     <div
       className="rounded-xl p-4 flex flex-col gap-3 border border-neutral-800"
@@ -61,7 +64,7 @@ function KpiCard({ label, value, sub, icon, trend, gold, loading }: KpiProps) {
     >
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-neutral-500 uppercase tracking-wide">{label}</span>
-        <span className={`p-1.5 rounded-lg ${gold ? 'bg-gold-500/10 text-gold-400' : 'bg-neutral-800 text-neutral-400'}`}>
+        <span className={`p-1.5 rounded-lg ${green ? 'bg-emerald-500/10 text-emerald-400' : gold ? 'bg-gold-500/10 text-gold-400' : 'bg-neutral-800 text-neutral-400'}`}>
           {icon}
         </span>
       </div>
@@ -69,7 +72,7 @@ function KpiCard({ label, value, sub, icon, trend, gold, loading }: KpiProps) {
       {loading ? (
         <div className="h-7 w-28 bg-neutral-800 rounded animate-pulse" />
       ) : (
-        <p className={`text-xl font-bold ${gold ? 'text-gold-400' : 'text-white'}`}>{value}</p>
+        <p className={`text-xl font-bold ${green ? 'text-emerald-400' : gold ? 'text-gold-400' : 'text-white'}`}>{value}</p>
       )}
 
       {trend !== undefined && !loading && (
@@ -120,9 +123,17 @@ const STATUS_LABEL: Record<string, string> = {
 export default function DashboardPage() {
   const navigate = useNavigate()
   const [period, setPeriod] = useState<Period>('month')
+  // Rango para el período "Personalizado" (por defecto, el último mes)
+  const [customFrom, setCustomFrom] = useState('')
+  const [customTo, setCustomTo] = useState('')
+  const customReady = period === 'custom' && !!customFrom && !!customTo
 
-  // Finance KPIs
-  const { data: fin, isLoading: finLoading } = useFinanceDashboard(PERIOD_MAP[period])
+  // Finance KPIs (soporta period="custom" con from/to)
+  const { data: fin, isLoading: finLoading } = useFinanceDashboard(
+    PERIOD_MAP[period],
+    customReady ? `${customFrom}T00:00:00` : undefined,
+    customReady ? `${customTo}T23:59:59` : undefined,
+  )
 
   // Recent orders (last 5)
   const { data: ordersData, isLoading: ordersLoading } = useOrders({
@@ -134,13 +145,15 @@ export default function DashboardPage() {
 
   // Ganancia real del período (ventas − costo de productos vendidos)
   const range = useMemo(() => {
+    if (period === 'custom' && customFrom && customTo)
+      return { from: `${customFrom}T00:00:00`, to: `${customTo}T23:59:59` }
     const to = new Date()
     const from = new Date()
     if (period === 'today') from.setHours(0, 0, 0, 0)
     else if (period === 'week') from.setDate(from.getDate() - 7)
     else from.setDate(from.getDate() - 30)
     return { from: from.toISOString(), to: to.toISOString() }
-  }, [period])
+  }, [period, customFrom, customTo])
   const { data: salesReport } = useSalesReport(range.from, range.to)
 
   // Low stock products
@@ -172,7 +185,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Period selector */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {(Object.keys(PERIOD_LABELS) as Period[]).map(p => (
             <button
               key={p}
@@ -186,6 +199,23 @@ export default function DashboardPage() {
               {PERIOD_LABELS[p]}
             </button>
           ))}
+          {period === 'custom' && (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="date"
+                value={customFrom}
+                onChange={e => setCustomFrom(e.target.value)}
+                className="rounded-lg border border-neutral-800 bg-obsidian-800 px-2 py-1.5 text-xs text-white"
+              />
+              <span className="text-xs text-neutral-600">a</span>
+              <input
+                type="date"
+                value={customTo}
+                onChange={e => setCustomTo(e.target.value)}
+                className="rounded-lg border border-neutral-800 bg-obsidian-800 px-2 py-1.5 text-xs text-white"
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -201,11 +231,12 @@ export default function DashboardPage() {
         />
         <KpiCard
           label="Ganancia real"
+          green
           value={salesReport ? fmt(salesReport.totalProfit) : '—'}
           sub={salesReport && salesReport.totalRevenue > 0
             ? `Margen: ${((salesReport.totalProfit / salesReport.totalRevenue) * 100).toFixed(0)}%`
             : 'Cargá costos'}
-          icon={<TrendingUp className="h-4 w-4 text-emerald-400" />}
+          icon={<TrendingUp className="h-4 w-4" />}
         />
         <KpiCard
           label="Ganancia Neta"

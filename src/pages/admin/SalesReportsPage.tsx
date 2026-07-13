@@ -135,6 +135,7 @@ export default function SalesReportsPage() {
             />
             <StatCard
               label="Ganancia real"
+              green
               value={`ARS ${formatMoney(report.totalProfit)}`}
               icon={<TrendingUp className="h-5 w-5 text-emerald-400" />}
               detail={
