@@ -110,7 +110,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Buscador + categorías — barra fija bajo el header ── */}
-      <div className="sticky top-16 z-30 border-b border-white/5 bg-black/95 backdrop-blur">
+      <div className="sticky top-16 z-20 border-b border-white/5 bg-black/95 backdrop-blur">
         <div className="mx-auto max-w-3xl px-4 py-3 sm:px-6">
           {/* Buscador */}
           <div className="relative mx-auto max-w-md">
