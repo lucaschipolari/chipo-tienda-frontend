@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Search, Loader2, Package, ShieldCheck, Users, Truck, ImageIcon } from 'lucide-react'
 import { useProducts } from '@/features/products/hooks/useProducts'
 import { useCategories, flattenCategories } from '@/features/categories/hooks/useCategories'
@@ -80,6 +80,7 @@ function TrustSection() {
 export default function HomePage() {
   const [search, setSearch] = useState('')
   const [categoryId, setCategoryId] = useState('')
+  const [sortBy, setSortBy] = useState('relevant')
   const debounced = useDebounce(search, 300)
 
   const { data: categories } = useCategories()
@@ -96,7 +97,13 @@ export default function HomePage() {
     status: 'Published',
   })
 
-  const products = data?.items ?? []
+  const products = useMemo(() => {
+    const arr = [...(data?.items ?? [])]
+    if (sortBy === 'name')       arr.sort((a, b) => a.name.localeCompare(b.name, 'es'))
+    else if (sortBy === 'price_asc')  arr.sort((a, b) => a.basePrice - b.basePrice)
+    else if (sortBy === 'price_desc') arr.sort((a, b) => b.basePrice - a.basePrice)
+    return arr
+  }, [data, sortBy])
 
   return (
     <div className="min-h-screen">
@@ -147,6 +154,21 @@ export default function HomePage() {
               </button>
             ))}
           </div>
+
+          {/* Ordenar */}
+          <div className="mt-2 flex items-center justify-end gap-2">
+            <span className="text-[11px] text-neutral-500">Ordenar:</span>
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+              className="rounded-full bg-white/[0.06] px-3 py-1.5 text-xs text-white ring-1 ring-white/15 focus:outline-none focus:ring-white/35 [&>option]:bg-neutral-900"
+            >
+              <option value="relevant">Destacados</option>
+              <option value="name">Nombre (A-Z)</option>
+              <option value="price_asc">Precio: menor a mayor</option>
+              <option value="price_desc">Precio: mayor a menor</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -180,7 +202,7 @@ export default function HomePage() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
             {products.map((p, i) => (
-              <Reveal key={p.id} delay={(i % 4) * 60}>
+              <Reveal key={p.id} delay={(i % 4) * 60} className="h-full">
                 <ProductCard product={p} />
               </Reveal>
             ))}

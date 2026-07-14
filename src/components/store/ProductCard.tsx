@@ -73,7 +73,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
     <Link
       to={`/product/${product.id}`}
       onClick={handleCardClick}
-      className="group relative flex flex-col overflow-hidden rounded-2xl bg-black ring-1 ring-white/10 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.8)] transition-all duration-500 hover:-translate-y-1 hover:ring-white/25 hover:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.95)]"
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl bg-black ring-1 ring-white/10 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.8)] transition-all duration-500 hover:-translate-y-1 hover:ring-white/25 hover:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.95)]"
     >
       {/* Imagen — relación vertical elegante */}
       <div className="relative aspect-[4/5] overflow-hidden bg-neutral-950">
@@ -147,7 +147,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
 
         {/* Notas — solo si el producto tiene perfil olfativo cargado */}
         {notes.length > 0 && (
-          <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
+          <div className="flex flex-wrap gap-1.5 pt-1">
             {notes.map((n) => (
               <span
                 key={n}
@@ -160,7 +160,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
         )}
 
         {/* Precio + Agregar — en mobile se apilan (el botón va full-width abajo) */}
-        <div className="flex flex-col gap-2 pt-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-auto flex flex-col gap-2 pt-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span className="text-sm font-semibold text-white">
               ${formatMoney(product.basePrice)}
