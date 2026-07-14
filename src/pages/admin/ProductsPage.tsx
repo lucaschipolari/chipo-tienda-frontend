@@ -12,7 +12,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import {
   useProducts, useProduct, useCreateProduct, useUpdateProduct,
   useChangeProductStatus, useUpdateVariant, useAddVariant,
-  useAddProductImage, useRemoveProductImage,
+  useAddProductImage, useRemoveProductImage, useConfigureDecant,
 } from '@/features/products/hooks/useProducts'
 import { useAdjustStock } from '@/features/inventory/hooks/useInventory'
 import { useCategories, flattenCategories } from '@/features/categories/hooks/useCategories'
@@ -652,6 +652,9 @@ function EditProductModal({ productId, onClose }: { productId: string; onClose: 
           {/* Tab: Variants */}
           {activeTab === 'variants' && (
             <div className="p-6 space-y-4">
+              {product && (product.isDecant || product.categoryName === 'Decants') && (
+                <DecantPanel product={product} />
+              )}
               {variantMsg && (
                 <div className="text-xs text-green-400 bg-green-400/10 rounded-xl px-3 py-2">{variantMsg}</div>
               )}
@@ -791,6 +794,64 @@ function ImagesTab({ productId, images }: { productId: string; images: ProductIm
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function DecantPanel({ product }: { product: Product }) {
+  const { mutate: configure, isPending } = useConfigureDecant()
+  const [bottleCost, setBottleCost] = useState(product.bottleCost != null ? String(product.bottleCost) : '')
+  const [bottleMl, setBottleMl]     = useState(product.bottleMl != null ? String(product.bottleMl) : '')
+  const [stockMl, setStockMl]       = useState(String(product.stockMl ?? 0))
+  const [reorderMl, setReorderMl]   = useState(String(product.reorderMl ?? 0))
+
+  const bc = Number(bottleCost) || 0
+  const bm = Number(bottleMl) || 0
+  const costPerMl = bm > 0 ? bc / bm : 0
+  const capital = (Number(stockMl) || 0) * costPerMl
+
+  const save = () => configure({
+    productId: product.id,
+    bottleCost: bottleCost ? Number(bottleCost) : null,
+    bottleMl: bottleMl ? Number(bottleMl) : null,
+    stockMl: Number(stockMl) || 0,
+    reorderMl: Number(reorderMl) || 0,
+  })
+
+  return (
+    <div className="rounded-xl border border-gold-500/20 bg-gold-500/[0.03] p-4">
+      <p className="mb-1 text-xs font-semibold text-gold-400 uppercase tracking-wider">Decant · stock por ml</p>
+      <p className="mb-3 text-[11px] text-neutral-500">
+        El stock se mide en ml del frasco. Cada venta de 5ml o 10ml descuenta esos ml. El costo sale del frasco (costo ÷ ml).
+      </p>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div>
+          <label className={labelCls}>Costo del frasco</label>
+          <input value={bottleCost} onChange={e => setBottleCost(e.target.value)} type="number" step="0.01" className={inputCls} placeholder="Ej. 70000" />
+        </div>
+        <div>
+          <label className={labelCls}>ml del frasco</label>
+          <input value={bottleMl} onChange={e => setBottleMl(e.target.value)} type="number" className={inputCls} placeholder="Ej. 100" />
+        </div>
+        <div>
+          <label className={labelCls}>Stock actual (ml)</label>
+          <input value={stockMl} onChange={e => setStockMl(e.target.value)} type="number" className={inputCls} placeholder="ml disponibles" />
+        </div>
+        <div>
+          <label className={labelCls}>Avisar a los (ml)</label>
+          <input value={reorderMl} onChange={e => setReorderMl(e.target.value)} type="number" className={inputCls} placeholder="Ej. 15" />
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-neutral-400">
+          Costo por ml: <span className="text-white">${costPerMl ? formatCurrency(costPerMl, product.currency) : '—'}</span>
+          {' · '}Capital en este decant: <span className="text-emerald-400">${formatCurrency(capital, product.currency)}</span>
+        </p>
+        <button type="button" onClick={save} disabled={isPending}
+          className="rounded-xl bg-gold-500 hover:bg-gold-400 text-black text-xs font-semibold px-4 py-1.5 disabled:opacity-60 transition-colors">
+          {isPending ? 'Guardando…' : 'Guardar decant'}
+        </button>
+      </div>
     </div>
   )
 }

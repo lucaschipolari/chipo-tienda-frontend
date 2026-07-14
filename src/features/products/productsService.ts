@@ -50,4 +50,7 @@ export const productsService = {
 
   removeImage: (productId: string, imageId: string) =>
     httpClient.delete<void>(`${BASE}/${productId}/images/${imageId}`),
+
+  configureDecant: (productId: string, data: { bottleCost?: number | null; bottleMl?: number | null; stockMl: number; reorderMl: number }) =>
+    httpClient.put<void>(`${BASE}/${productId}/decant`, data),
 }

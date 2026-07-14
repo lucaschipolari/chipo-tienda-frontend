@@ -55,6 +55,13 @@ export interface Product {
   variants: ProductVariant[]
   images: ProductImage[]
   totalStock: number
+  // Decant (por ml)
+  isDecant?: boolean
+  stockMl?: number
+  bottleCost?: number | null
+  bottleMl?: number | null
+  reorderMl?: number
+  costPerMl?: number | null
   createdAt: string
   updatedAt: string
 }

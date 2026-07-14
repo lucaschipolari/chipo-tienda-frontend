@@ -100,6 +100,18 @@ export function useAddProductImage() {
   })
 }
 
+export function useConfigureDecant() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ productId, ...data }: { productId: string; bottleCost?: number | null; bottleMl?: number | null; stockMl: number; reorderMl: number }) =>
+      productsService.configureDecant(productId, data),
+    onSuccess: (_r, { productId }) => {
+      qc.invalidateQueries({ queryKey: productKeys.detail(productId) })
+      qc.invalidateQueries({ queryKey: productKeys.lists() })
+    },
+  })
+}
+
 export function useRemoveProductImage() {
   const qc = useQueryClient()
   return useMutation({
