@@ -488,6 +488,7 @@ const variantEditSchema = z.object({
   price:             z.coerce.number().min(0).optional().or(z.literal('')),
   compareAtPrice:    z.coerce.number().min(0).optional().or(z.literal('')),
   cost:              z.coerce.number().min(0).optional().or(z.literal('')),
+  displayOrder:      z.coerce.number().min(0).optional().or(z.literal('')),
   currency:          z.string().length(3),
   minStockThreshold: z.coerce.number().min(0),
   isActive:          z.boolean(),
@@ -861,7 +862,7 @@ function DecantPanel({ product }: { product: Product }) {
 function VariantEditRow({
   variant, productId, defaultCurrency, onSave, isSaving, isDecant = false,
 }: {
-  variant: { id: string; sku: string; price: number | null; compareAtPrice?: number | null; cost?: number | null; currency: string; stockQuantity: number; minStockThreshold: number; isActive: boolean; attributes: Record<string, string> }
+  variant: { id: string; sku: string; price: number | null; compareAtPrice?: number | null; cost?: number | null; currency: string; stockQuantity: number; minStockThreshold: number; displayOrder?: number; isActive: boolean; attributes: Record<string, string> }
   productId: string
   defaultCurrency: string
   onSave: (req: UpdateVariantRequest) => void
@@ -874,6 +875,7 @@ function VariantEditRow({
       price:             variant.price ?? undefined,
       compareAtPrice:    variant.compareAtPrice ?? undefined,
       cost:              variant.cost ?? undefined,
+      displayOrder:      variant.displayOrder ?? 0,
       currency:          variant.currency || defaultCurrency,
       minStockThreshold: variant.minStockThreshold,
       isActive:          variant.isActive,
@@ -901,6 +903,7 @@ function VariantEditRow({
       minStockThreshold: values.minStockThreshold,
       isActive: values.isActive,
       attributes: label.trim() ? { 'Tamaño': label.trim() } : {},
+      displayOrder: values.displayOrder === '' || values.displayOrder == null ? 0 : Number(values.displayOrder),
     })
   }
 
@@ -957,10 +960,16 @@ function VariantEditRow({
         </div>
       </div>
 
-      {/* Tamaño / nombre de la variante */}
-      <div className="mb-3">
-        <label className={labelCls}>Tamaño / nombre (ej. 5ml, 10ml)</label>
-        <input value={label} onChange={e => setLabel(e.target.value)} className={inputCls} placeholder="Dejalo vacío si es variante única" />
+      {/* Tamaño / nombre + orden */}
+      <div className="mb-3 grid grid-cols-3 gap-3">
+        <div className="col-span-2">
+          <label className={labelCls}>Tamaño / nombre (ej. 5ml, 10ml)</label>
+          <input value={label} onChange={e => setLabel(e.target.value)} className={inputCls} placeholder="Dejalo vacío si es variante única" />
+        </div>
+        <div>
+          <label className={labelCls}>Orden</label>
+          <input {...form.register('displayOrder')} type="number" className={inputCls} placeholder="0" />
+        </div>
       </div>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-3 items-end sm:grid-cols-5">

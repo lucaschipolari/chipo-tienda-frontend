@@ -14,6 +14,7 @@ export interface ProductVariant {
   currency: string
   stockQuantity: number
   minStockThreshold: number
+  displayOrder?: number
   isActive: boolean
   isBelowMinStock: boolean
   createdAt: string
@@ -153,6 +154,7 @@ export interface UpdateVariantRequest {
   minStockThreshold: number
   isActive: boolean
   attributes?: Record<string, string>
+  displayOrder?: number
 }
 
 // ─── Categories ───────────────────────────────────────────────────────────────
