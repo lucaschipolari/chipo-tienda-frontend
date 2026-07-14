@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import {
   Plus, Search, Edit2, Eye,
   Package, TrendingUp, AlertTriangle, ChevronDown, X, Loader2,
-  CheckCircle2, XCircle, Clock,
+  CheckCircle2, XCircle, Clock, Trash2,
 } from 'lucide-react'
 import { useForm, Controller, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -13,6 +13,7 @@ import {
   useProducts, useProduct, useCreateProduct, useUpdateProduct,
   useChangeProductStatus, useUpdateVariant, useAddVariant,
   useAddProductImage, useRemoveProductImage, useConfigureDecant,
+  useDeleteProduct, useDeleteVariant,
 } from '@/features/products/hooks/useProducts'
 import { useAdjustStock } from '@/features/inventory/hooks/useInventory'
 import { useCategories, flattenCategories } from '@/features/categories/hooks/useCategories'
@@ -885,6 +886,10 @@ function VariantEditRow({
   const { mutate: adjustStock, isPending: adjustingStock } = useAdjustStock()
   const [newStock, setNewStock] = useState(String(variant.stockQuantity))
 
+  // Nombre/tamaño de la variante (editable)
+  const { mutate: deleteVariant, isPending: deleting } = useDeleteVariant()
+  const [label, setLabel] = useState(variant.attributes['Tamaño'] ?? variant.attributes['Tamano'] ?? '')
+
   const onSubmit = (values: VariantEditValues) => {
     onSave({
       productId,
@@ -895,6 +900,7 @@ function VariantEditRow({
       currency: values.currency,
       minStockThreshold: values.minStockThreshold,
       isActive: values.isActive,
+      attributes: label.trim() ? { 'Tamaño': label.trim() } : {},
     })
   }
 
@@ -932,12 +938,29 @@ function VariantEditRow({
             </>
           )}
         </div>
-        <Controller control={form.control} name="isActive" render={({ field }) => (
-          <label className="flex items-center gap-2 cursor-pointer text-xs text-neutral-400">
-            <input type="checkbox" className="accent-gold-500" checked={field.value} onChange={field.onChange} />
-            Activa
-          </label>
-        )} />
+        <div className="flex items-center gap-3">
+          <Controller control={form.control} name="isActive" render={({ field }) => (
+            <label className="flex items-center gap-2 cursor-pointer text-xs text-neutral-400">
+              <input type="checkbox" className="accent-gold-500" checked={field.value} onChange={field.onChange} />
+              Activa
+            </label>
+          )} />
+          <button
+            type="button"
+            disabled={deleting}
+            onClick={() => { if (confirm('¿Eliminar esta variante?')) deleteVariant({ productId, variantId: variant.id }) }}
+            className="text-neutral-600 hover:text-red-400 transition-colors disabled:opacity-40"
+            title="Eliminar variante"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Tamaño / nombre de la variante */}
+      <div className="mb-3">
+        <label className={labelCls}>Tamaño / nombre (ej. 5ml, 10ml)</label>
+        <input value={label} onChange={e => setLabel(e.target.value)} className={inputCls} placeholder="Dejalo vacío si es variante única" />
       </div>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-3 items-end sm:grid-cols-5">
@@ -1037,6 +1060,7 @@ function StatusMenu({ product, anchorRect, onClose }: { product: ProductListItem
 function ProductRow({ product, onEdit }: { product: ProductListItem; onEdit: () => void }) {
   const [menuRect, setMenuRect] = useState<DOMRect | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
+  const { mutate: deleteProduct, isPending: deleting } = useDeleteProduct()
   return (
     <tr className="border-b border-neutral-800/60 hover:bg-obsidian-800/30 transition-colors group">
       <td className="px-4 py-3">
@@ -1070,6 +1094,14 @@ function ProductRow({ product, onEdit }: { product: ProductListItem; onEdit: () 
             title="Editar"
           >
             <Edit2 className="h-3.5 w-3.5" />
+          </button>
+          <button
+            disabled={deleting}
+            onClick={() => { if (confirm(`¿Eliminar "${product.name}"? Esta acción no se puede deshacer.`)) deleteProduct(product.id) }}
+            className="p-1.5 rounded-lg text-neutral-600 hover:text-red-400 hover:bg-obsidian-700 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-40"
+            title="Eliminar producto"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
           </button>
           <div className="relative">
             <button

@@ -100,6 +100,26 @@ export function useAddProductImage() {
   })
 }
 
+export function useDeleteProduct() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => productsService.deleteProduct(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: productKeys.lists() }),
+  })
+}
+
+export function useDeleteVariant() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ productId, variantId }: { productId: string; variantId: string }) =>
+      productsService.deleteVariant(productId, variantId),
+    onSuccess: (_r, { productId }) => {
+      qc.invalidateQueries({ queryKey: productKeys.detail(productId) })
+      qc.invalidateQueries({ queryKey: productKeys.lists() })
+    },
+  })
+}
+
 export function useConfigureDecant() {
   const qc = useQueryClient()
   return useMutation({

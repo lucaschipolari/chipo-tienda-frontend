@@ -53,4 +53,10 @@ export const productsService = {
 
   configureDecant: (productId: string, data: { bottleCost?: number | null; bottleMl?: number | null; stockMl: number; reorderMl: number }) =>
     httpClient.put<void>(`${BASE}/${productId}/decant`, data),
+
+  deleteProduct: (id: string) =>
+    httpClient.delete<void>(`${BASE}/${id}`),
+
+  deleteVariant: (productId: string, variantId: string) =>
+    httpClient.delete<void>(`${BASE}/${productId}/variants/${variantId}`),
 }

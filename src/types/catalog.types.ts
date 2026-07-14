@@ -152,6 +152,7 @@ export interface UpdateVariantRequest {
   currency: string
   minStockThreshold: number
   isActive: boolean
+  attributes?: Record<string, string>
 }
 
 // ─── Categories ───────────────────────────────────────────────────────────────
