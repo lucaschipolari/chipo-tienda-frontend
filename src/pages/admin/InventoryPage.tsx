@@ -8,8 +8,57 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useLowStock, useAdjustStock } from '@/features/inventory/hooks/useInventory'
 import { useProducts } from '@/features/products/hooks/useProducts'
+import { useVialCosts, useSetVialCosts } from '@/features/settings/useSettings'
+import type { VialCost } from '@/features/settings/settingsService'
+import { toast } from 'sonner'
 import { cn } from '@/utils/helpers/cn'
 import type { LowStockItem } from '@/types/catalog.types'
+
+// ─── Costo de frasquitos (global, aplica a todos los decants) ───────────────────
+function VialCostsEditor() {
+  const { data } = useVialCosts()
+  const { mutate: save, isPending } = useSetVialCosts()
+  const [rows, setRows] = useState<VialCost[] | null>(null)
+
+  // Inicializa desde el server; si está vacío, propone 5ml y 10ml
+  const list = rows ?? (data && data.length ? data : [{ ml: 5, cost: 0 }, { ml: 10, cost: 0 }])
+
+  const update = (i: number, field: 'ml' | 'cost', v: string) =>
+    setRows(list.map((r, idx) => idx === i ? { ...r, [field]: Number(v) || 0 } : r))
+
+  return (
+    <div className="rounded-2xl border border-neutral-800 p-5" style={{ background: 'var(--surface)' }}>
+      <p className="text-sm font-semibold text-white">Costo de frasquitos (decants)</p>
+      <p className="mt-0.5 mb-3 text-xs text-neutral-500">
+        Es el costo del envase por tamaño. Se suma automáticamente al costo de cada decant vendido.
+        Cambialo acá y aplica a todos — no hace falta editar decant por decant.
+      </p>
+      <div className="space-y-2">
+        {list.map((r, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <input type="number" value={r.ml} onChange={e => update(i, 'ml', e.target.value)}
+              className="w-20 rounded-lg border border-neutral-700 bg-obsidian-800 px-2 py-1.5 text-sm text-white" />
+            <span className="text-xs text-neutral-500">ml →</span>
+            <span className="text-xs text-neutral-500">$</span>
+            <input type="number" value={r.cost} onChange={e => update(i, 'cost', e.target.value)}
+              className="w-28 rounded-lg border border-neutral-700 bg-obsidian-800 px-2 py-1.5 text-sm text-white" placeholder="costo frasquito" />
+            <button type="button" onClick={() => setRows(list.filter((_, idx) => idx !== i))}
+              className="text-neutral-600 hover:text-red-400 transition-colors"><X className="h-3.5 w-3.5" /></button>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 flex items-center gap-2">
+        <button type="button" onClick={() => setRows([...list, { ml: 0, cost: 0 }])}
+          className="text-xs text-neutral-400 hover:text-white transition-colors">+ Agregar tamaño</button>
+        <button type="button" disabled={isPending}
+          onClick={() => save(list.filter(r => r.ml > 0), { onSuccess: () => toast.success('Costo de frasquitos guardado') })}
+          className="ml-auto rounded-xl bg-gold-500 hover:bg-gold-400 text-black text-xs font-semibold px-4 py-1.5 disabled:opacity-60 transition-colors">
+          {isPending ? 'Guardando…' : 'Guardar'}
+        </button>
+      </div>
+    </div>
+  )
+}
 
 // ─── Adjust Stock Modal ────────────────────────────────────────────────────────
 
@@ -170,6 +219,8 @@ export default function InventoryPage() {
           <RefreshCw className="h-4 w-4" /> Actualizar
         </button>
       </div>
+
+      <VialCostsEditor />
 
       {/* Stats cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
