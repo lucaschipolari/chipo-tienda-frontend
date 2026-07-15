@@ -22,8 +22,6 @@ import type { PaymentMethod, DeliveryMethod } from '@/types/order.types'
 
 const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; icon: React.ReactNode }[] = [
   { value: 'Transfer', label: 'Transferencia', icon: <Landmark className="h-4 w-4" /> },
-  { value: 'QR',       label: 'QR / Billetera', icon: <QrCode className="h-4 w-4" /> },
-  { value: 'Card',     label: 'Tarjeta',        icon: <CreditCard className="h-4 w-4" /> },
   { value: 'Cash',     label: 'Efectivo',       icon: <Banknote className="h-4 w-4" /> },
 ]
 
