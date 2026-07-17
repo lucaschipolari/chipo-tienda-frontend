@@ -1189,7 +1189,7 @@ export default function ProductsPage() {
       const pages = await downloadCatalog(all.items, (done, total) =>
         toast.loading(`Generando catálogo… ${done}/${total} imágenes`, { id: t }),
       )
-      toast.success(`Catálogo listo: ${pages} ${pages === 1 ? 'imagen descargada' : 'imágenes descargadas'}`, { id: t })
+      toast.success(`Catálogo listo: ZIP con ${pages} ${pages === 1 ? 'imagen' : 'imágenes'} descargado`, { id: t })
     } catch {
       toast.error('No se pudo generar el catálogo.', { id: t })
     } finally {

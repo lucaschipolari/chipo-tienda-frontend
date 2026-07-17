@@ -1,16 +1,26 @@
+import JSZip from 'jszip'
 import { formatMoney } from './formatMoney'
 import type { ProductListItem } from '@/types/catalog.types'
 
 /**
- * catalogImage — genera imágenes de catálogo (una o varias por categoría),
- * al estilo de las placas de Canva: header elegante + grilla 3×3 de tarjetas
- * con marca, foto, nombre, tamaño y precio. Los agotados llevan un sello
- * "SIN STOCK". Pensado para mandar por WhatsApp sin editar nada a mano.
+ * catalogImage — genera imágenes de catálogo (una o varias por categoría) con
+ * la identidad de la tienda (negro + dorado): header elegante + grilla 3×4 de
+ * tarjetas con marca, foto, nombre, tamaño y precio. Los agotados llevan sello
+ * "AGOTADO". Al pie: WhatsApp, Instagram y fecha. Todo se empaqueta en un ZIP.
  */
 
-const GOLD = '#B8892B'
-const CARD_BG = '#FFFFFF'
-const PAGE_BG = '#F3F1EC'
+// ── Paleta de la marca ──
+const PAGE_BG_TOP = '#111111'
+const PAGE_BG_BOT = '#050505'
+const CARD_BG = '#161616'
+const CARD_RING = 'rgba(255,255,255,0.08)'
+const GOLD = '#E6C15A'
+const WHITE = '#FFFFFF'
+const MUTED = 'rgba(255,255,255,0.45)'
+
+// ── Datos de contacto de la tienda ──
+const PHONE = '381 346 2606'
+const INSTAGRAM = '@chipo.ar'
 
 // Marcas de varias palabras: para separar bien "marca" del "nombre".
 const KNOWN_BRANDS = [
@@ -30,20 +40,17 @@ interface CatalogCard {
   soldOut: boolean
 }
 
-/** Separa "Armaf Club De Nuit Iconic" → { brand: "ARMAF", name: "Club De Nuit Iconic" }. */
 function splitBrand(fullName: string): { brand: string; name: string } {
   for (const b of KNOWN_BRANDS) {
     if (fullName.toLowerCase().startsWith(b.toLowerCase() + ' ')) {
       return { brand: b.toUpperCase(), name: fullName.slice(b.length).trim() }
     }
   }
-  // Fallback: primera palabra como marca
   const parts = fullName.split(' ')
   if (parts.length > 1) return { brand: parts[0].toUpperCase(), name: parts.slice(1).join(' ') }
   return { brand: '', name: fullName }
 }
 
-/** Extrae el tamaño (ej "100ml") si está en el nombre. */
 function extractSize(name: string): string | null {
   const m = name.match(/(\d+)\s?ml/i)
   return m ? `${m[1]}ml` : null
@@ -63,7 +70,7 @@ function toCard(p: ProductListItem): CatalogCard {
 
 function proxied(url: string, size = 600): string {
   const noProto = url.replace(/^https?:\/\//, '')
-  return `https://images.weserv.nl/?url=${encodeURIComponent(`ssl:${noProto}`)}&w=${size}&h=${size}&fit=contain&cbg=white&output=jpg`
+  return `https://images.weserv.nl/?url=${encodeURIComponent(`ssl:${noProto}`)}&w=${size}&h=${size}&fit=cover&output=jpg`
 }
 
 function loadImage(src: string, crossOrigin = false): Promise<HTMLImageElement> {
@@ -94,75 +101,93 @@ function fitText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number):
 }
 
 const COLS = 3
-const ROWS = 3
-const PER_PAGE = COLS * ROWS
+const ROWS = 4
+const PER_PAGE = COLS * ROWS // 12
 
-/** Dibuja una tarjeta de producto en la posición dada. */
+/** Dibuja una tarjeta de producto (tema oscuro) en la posición dada. */
 async function drawCard(ctx: CanvasRenderingContext2D, card: CatalogCard, x: number, y: number, w: number, h: number) {
-  // Fondo blanco de la tarjeta
+  // Tarjeta oscura con borde sutil
   ctx.save()
-  ctx.shadowColor = 'rgba(0,0,0,0.10)'
-  ctx.shadowBlur = 18
-  ctx.shadowOffsetY = 6
+  ctx.shadowColor = 'rgba(0,0,0,0.5)'
+  ctx.shadowBlur = 20
+  ctx.shadowOffsetY = 8
   ctx.fillStyle = CARD_BG
-  roundRect(ctx, x, y, w, h, 18)
+  roundRect(ctx, x, y, w, h, 20)
   ctx.fill()
   ctx.restore()
+  ctx.strokeStyle = CARD_RING
+  ctx.lineWidth = 1.5
+  roundRect(ctx, x, y, w, h, 20)
+  ctx.stroke()
 
-  const padX = 18
-  // Marca
-  ctx.fillStyle = '#111'
-  ctx.font = '800 24px Inter, sans-serif'
+  const padX = 16
   ctx.textAlign = 'center'
-  if (card.brand) ctx.fillText(fitText(ctx, card.brand, w - padX * 2), x + w / 2, y + 40)
 
-  // Foto
-  const imgAreaY = y + 58
-  const imgSize = Math.min(w - padX * 2, h * 0.42)
-  const imgX = x + (w - imgSize) / 2
+  // Marca (dorada)
+  ctx.fillStyle = GOLD
+  ctx.font = '800 22px Inter, sans-serif'
+  if (card.brand) {
+    ctx.letterSpacing = '2px'
+    ctx.fillText(fitText(ctx, card.brand, w - padX * 2), x + w / 2, y + 36)
+    ctx.letterSpacing = '0px'
+  }
+
+  // Foto (cover dentro de un recuadro redondeado)
+  const imgTop = y + 52
+  const imgH = h * 0.44
+  const imgW = w - padX * 2
+  const imgX = x + padX
+  ctx.save()
+  roundRect(ctx, imgX, imgTop, imgW, imgH, 12)
+  ctx.clip()
+  ctx.fillStyle = '#0d0d0d'
+  ctx.fillRect(imgX, imgTop, imgW, imgH)
   if (card.imageUrl) {
     try {
       const img = await loadImage(proxied(card.imageUrl, 600), true)
-      const scale = Math.min(imgSize / img.width, imgSize / img.height)
+      const scale = Math.max(imgW / img.width, imgH / img.height)
       const dw = img.width * scale, dh = img.height * scale
-      ctx.drawImage(img, imgX + (imgSize - dw) / 2, imgAreaY + (imgSize - dh) / 2, dw, dh)
-    } catch { /* sin foto: se deja el espacio en blanco */ }
+      ctx.drawImage(img, imgX + (imgW - dw) / 2, imgTop + (imgH - dh) / 2, dw, dh)
+    } catch { /* sin foto */ }
   }
+  ctx.restore()
 
-  // Nombre del producto
-  let ty = imgAreaY + imgSize + 34
-  ctx.fillStyle = '#1a1a1a'
-  ctx.font = '600 21px Inter, sans-serif'
-  // letter-spacing sutil como el Canva
-  ctx.letterSpacing = '1px'
+  // Nombre
+  let ty = imgTop + imgH + 34
+  ctx.fillStyle = WHITE
+  ctx.font = '600 20px Inter, sans-serif'
+  ctx.letterSpacing = '0.5px'
   ctx.fillText(fitText(ctx, card.name.toUpperCase(), w - padX * 2), x + w / 2, ty)
   ctx.letterSpacing = '0px'
 
-  // "eau de parfum" + tamaño
-  ty += 26
-  ctx.fillStyle = '#8a8a8a'
-  ctx.font = '400 15px Inter, sans-serif'
-  const sub = card.size ? `eau de parfum · ${card.size}` : 'eau de parfum'
-  ctx.fillText(sub, x + w / 2, ty)
+  // Subtítulo
+  ty += 24
+  ctx.fillStyle = MUTED
+  ctx.font = '400 14px Inter, sans-serif'
+  ctx.fillText(card.size ? `Eau de Parfum · ${card.size}` : 'Eau de Parfum', x + w / 2, ty)
 
-  // Píldora de precio (negra) o sello SIN STOCK (rojo)
-  ty += 22
-  const pillW = 150, pillH = 42
+  // Píldora de precio / agotado (abajo de la tarjeta)
+  const pillW = 150, pillH = 40
   const pillX = x + (w - pillW) / 2
+  const pillY = y + h - pillH - 16
   if (card.soldOut) {
-    ctx.fillStyle = '#9b1c1c'
-    roundRect(ctx, pillX, ty, pillW, pillH, 21)
+    ctx.fillStyle = 'rgba(255,255,255,0.06)'
+    roundRect(ctx, pillX, pillY, pillW, pillH, 20)
     ctx.fill()
-    ctx.fillStyle = '#fff'
-    ctx.font = '700 20px Inter, sans-serif'
-    ctx.fillText('SIN STOCK', x + w / 2, ty + 28)
+    ctx.strokeStyle = 'rgba(220,80,80,0.5)'
+    ctx.lineWidth = 1.5
+    roundRect(ctx, pillX, pillY, pillW, pillH, 20)
+    ctx.stroke()
+    ctx.fillStyle = '#e88'
+    ctx.font = '700 18px Inter, sans-serif'
+    ctx.fillText('AGOTADO', x + w / 2, pillY + 26)
   } else {
-    ctx.fillStyle = '#0A0A0A'
-    roundRect(ctx, pillX, ty, pillW, pillH, 21)
+    ctx.fillStyle = GOLD
+    roundRect(ctx, pillX, pillY, pillW, pillH, 20)
     ctx.fill()
-    ctx.fillStyle = '#fff'
-    ctx.font = '700 24px Inter, sans-serif'
-    ctx.fillText(`$${formatMoney(card.price)}`, x + w / 2, ty + 29)
+    ctx.fillStyle = '#0A0A0A'
+    ctx.font = '800 23px Inter, sans-serif'
+    ctx.fillText(`$${formatMoney(card.price)}`, x + w / 2, pillY + 28)
   }
 }
 
@@ -172,37 +197,44 @@ async function renderPage(
   cards: CatalogCard[],
   pageIndex: number,
   totalPages: number,
+  dateStr: string,
   logo: HTMLImageElement | null,
 ): Promise<HTMLCanvasElement> {
   if (document.fonts?.ready) { try { await document.fonts.ready } catch { /* noop */ } }
 
-  const W = 1080, H = 1500
+  const W = 1080, H = 1720
   const canvas = document.createElement('canvas')
   canvas.width = W; canvas.height = H
   const ctx = canvas.getContext('2d')!
-  ctx.fillStyle = PAGE_BG
+
+  // Fondo con gradiente sutil
+  const grad = ctx.createLinearGradient(0, 0, 0, H)
+  grad.addColorStop(0, PAGE_BG_TOP)
+  grad.addColorStop(1, PAGE_BG_BOT)
+  ctx.fillStyle = grad
   ctx.fillRect(0, 0, W, H)
 
   // ── Header ──
   ctx.textAlign = 'center'
-  ctx.fillStyle = '#111'
-  ctx.font = '700 96px "Playfair Display", serif'
-  ctx.fillText(categoryName.toUpperCase(), W / 2, 130)
-  ctx.font = 'italic 600 64px "Playfair Display", serif'
+  ctx.fillStyle = WHITE
+  ctx.font = '700 90px "Playfair Display", serif'
+  ctx.fillText(categoryName.toUpperCase(), W / 2, 120)
+  ctx.font = 'italic 600 58px "Playfair Display", serif'
   ctx.fillStyle = GOLD
-  ctx.fillText('Originales', W / 2, 210)
+  ctx.fillText('Originales', W / 2, 190)
   if (totalPages > 1) {
-    ctx.fillStyle = '#999'
-    ctx.font = '500 24px Inter, sans-serif'
-    ctx.fillText(`${pageIndex + 1} / ${totalPages}`, W / 2, 250)
+    ctx.fillStyle = MUTED
+    ctx.font = '500 22px Inter, sans-serif'
+    ctx.fillText(`${pageIndex + 1} / ${totalPages}`, W / 2, 228)
   }
 
-  // ── Grilla ──
-  const gridTop = 290
-  const gap = 26
-  const marginX = 40
+  // ── Grilla 3×4 ──
+  const gridTop = 270
+  const footerH = 96
+  const gap = 22
+  const marginX = 36
   const cellW = (W - marginX * 2 - gap * (COLS - 1)) / COLS
-  const cellH = (H - gridTop - 40 - gap * (ROWS - 1)) / ROWS
+  const cellH = (H - gridTop - footerH - gap * (ROWS - 1)) / ROWS
 
   for (let i = 0; i < cards.length; i++) {
     const col = i % COLS
@@ -212,14 +244,33 @@ async function renderPage(
     await drawCard(ctx, cards[i], x, y, cellW, cellH)
   }
 
-  // ── Logo abajo (marca de agua sutil) ──
+  // ── Footer: contacto + fecha ──
+  const fy = H - footerH + 30
+  // línea divisoria
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)'
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.moveTo(marginX, fy - 22)
+  ctx.lineTo(W - marginX, fy - 22)
+  ctx.stroke()
+
+  // logo a la izquierda
   if (logo) {
-    const lw = 150
-    const lh = (logo.height / logo.width) * lw
-    ctx.globalAlpha = 0.85
-    ctx.drawImage(logo, (W - lw) / 2, H - lh - 8, lw, lh)
-    ctx.globalAlpha = 1
+    const lh = 34, lw = (logo.width / logo.height) * lh
+    ctx.drawImage(logo, marginX, fy - 4, lw, lh)
   }
+
+  // contacto centrado
+  ctx.textAlign = 'center'
+  ctx.fillStyle = 'rgba(255,255,255,0.75)'
+  ctx.font = '600 26px Inter, sans-serif'
+  ctx.fillText(`WhatsApp ${PHONE}   ·   Instagram ${INSTAGRAM}`, W / 2, fy + 22)
+
+  // fecha a la derecha
+  ctx.textAlign = 'right'
+  ctx.fillStyle = MUTED
+  ctx.font = '400 20px Inter, sans-serif'
+  ctx.fillText(dateStr, W - marginX, fy + 22)
 
   return canvas
 }
@@ -238,18 +289,22 @@ function download(blob: Blob, filename: string) {
   document.body.appendChild(a)
   a.click()
   a.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 2000)
+  setTimeout(() => URL.revokeObjectURL(url), 3000)
 }
 
 /**
- * Genera y descarga el catálogo agrupado por categoría.
- * @param products  todos los productos publicados a incluir.
- * @param onProgress callback opcional (hechas, total) para mostrar avance.
+ * Genera el catálogo por categoría y descarga TODO en un ZIP.
+ * @returns cantidad de imágenes generadas.
  */
 export async function downloadCatalog(
   products: ProductListItem[],
   onProgress?: (done: number, total: number) => void,
 ): Promise<number> {
+  // Fecha legible (dd/mm/aaaa) — se ejecuta en el navegador
+  const now = new Date()
+  const dateStr = now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
   // Agrupar por categoría, excluyendo insumos internos ("Empaque")
   const groups = new Map<string, ProductListItem[]>()
   for (const p of products) {
@@ -262,9 +317,10 @@ export async function downloadCatalog(
   let logo: HTMLImageElement | null = null
   try { logo = await loadImage('/chipo-logo.svg') } catch { logo = null }
 
-  // Total de páginas para el progreso
   let totalPages = 0
   for (const list of groups.values()) totalPages += Math.max(1, Math.ceil(list.length / PER_PAGE))
+
+  const zip = new JSZip()
   let done = 0
 
   for (const [cat, list] of groups) {
@@ -272,16 +328,17 @@ export async function downloadCatalog(
     const pages = Math.max(1, Math.ceil(cards.length / PER_PAGE))
     for (let p = 0; p < pages; p++) {
       const slice = cards.slice(p * PER_PAGE, (p + 1) * PER_PAGE)
-      const canvas = await renderPage(cat, slice, p, pages, logo)
+      const canvas = await renderPage(cat, slice, p, pages, dateStr, logo)
       const blob = await canvasToBlob(canvas)
       const safeCat = cat.replace(/[^\w\sáéíóúñ-]/gi, '').trim().replace(/\s+/g, '-')
       const suffix = pages > 1 ? `-${p + 1}` : ''
-      download(blob, `catalogo-${safeCat}${suffix}.png`)
+      zip.file(`catalogo-${safeCat}${suffix}.png`, blob)
       done++
       onProgress?.(done, totalPages)
-      // pequeña pausa para que el navegador no bloquee descargas múltiples
-      await new Promise(r => setTimeout(r, 400))
     }
   }
+
+  const zipBlob = await zip.generateAsync({ type: 'blob' })
+  download(zipBlob, `catalogo-chipo-${stamp}.zip`)
   return totalPages
 }
