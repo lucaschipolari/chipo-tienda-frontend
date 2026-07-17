@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# El panel de administración y las cuentas no deben indexarse
+Disallow: /admin
+Disallow: /login
+Disallow: /register
+Disallow: /checkout
+Disallow: /cart
+Disallow: /account
+Disallow: /orders
+
+Sitemap: https://chipoperfumeria.vercel.app/sitemap.xml
