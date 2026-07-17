@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import {
   Plus, Search, Edit2, Eye,
   Package, TrendingUp, AlertTriangle, ChevronDown, X, Loader2,
-  CheckCircle2, XCircle, Clock, Trash2,
+  CheckCircle2, XCircle, Clock, Trash2, ImageDown,
 } from 'lucide-react'
 import { useForm, Controller, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -19,6 +19,8 @@ import { useAdjustStock } from '@/features/inventory/hooks/useInventory'
 import { useCategories, flattenCategories } from '@/features/categories/hooks/useCategories'
 import { cn } from '@/utils/helpers/cn'
 import { formatCurrency } from '@/utils/formatters/currency'
+import { downloadProductPlaca } from '@/utils/helpers/productPlaca'
+import { toast } from 'sonner'
 import type {
   ProductListItem, ProductStatus, ProductImage,
   CreateProductRequest, UpdateProductRequest, UpdateVariantRequest,
@@ -1070,6 +1072,20 @@ function ProductRow({ product, onEdit }: { product: ProductListItem; onEdit: () 
   const [menuRect, setMenuRect] = useState<DOMRect | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
   const { mutate: deleteProduct, isPending: deleting } = useDeleteProduct()
+  const [generating, setGenerating] = useState(false)
+
+  async function handleDownloadPlaca() {
+    setGenerating(true)
+    try {
+      await downloadProductPlaca(product)
+      toast.success('Placa descargada — lista para WhatsApp')
+    } catch {
+      toast.error('No se pudo generar la placa. Revisá que el producto tenga foto.')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   return (
     <tr className="border-b border-neutral-800/60 hover:bg-obsidian-800/30 transition-colors group">
       <td className="px-4 py-3">
@@ -1097,6 +1113,14 @@ function ProductRow({ product, onEdit }: { product: ProductListItem; onEdit: () 
       <td className="px-4 py-3"><StatusBadge status={product.status} /></td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-1 justify-end relative">
+          <button
+            onClick={handleDownloadPlaca}
+            disabled={generating}
+            className="p-1.5 rounded-lg text-neutral-600 hover:text-gold-400 hover:bg-obsidian-700 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-40"
+            title="Descargar placa para WhatsApp"
+          >
+            {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImageDown className="h-3.5 w-3.5" />}
+          </button>
           <button
             onClick={onEdit}
             className="p-1.5 rounded-lg text-neutral-600 hover:text-white hover:bg-obsidian-700 transition-colors opacity-0 group-hover:opacity-100"
