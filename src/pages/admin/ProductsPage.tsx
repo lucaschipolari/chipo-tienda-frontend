@@ -20,7 +20,7 @@ import { useCategories, flattenCategories } from '@/features/categories/hooks/us
 import { cn } from '@/utils/helpers/cn'
 import { formatCurrency } from '@/utils/formatters/currency'
 import { downloadProductPlaca } from '@/utils/helpers/productPlaca'
-import { downloadCatalog } from '@/utils/helpers/catalogImage'
+import { downloadCatalog, type CatalogProduct, type CatalogVariant } from '@/utils/helpers/catalogImage'
 import { productsService } from '@/features/products/productsService'
 import { toast } from 'sonner'
 import type {
@@ -1175,18 +1175,60 @@ export default function ProductsPage() {
   const { data: categories } = useCategories()
   const flatCats = categories ? flattenCategories(categories) : []
 
-  // ── Generar catálogo (imágenes por categoría para WhatsApp) ──
+  // ── Generar catálogo (imágenes por categoría para WhatsApp/Instagram) ──
   const [catalogBusy, setCatalogBusy] = useState(false)
   async function handleGenerateCatalog() {
     setCatalogBusy(true)
-    const t = toast.loading('Generando catálogo…')
+    const t = toast.loading('Cargando productos…')
     try {
       const all = await productsService.getAll({ page: 1, pageSize: 500, status: 'Published' })
-      if (!all.items.length) {
+      const list = all.items
+      if (!list.length) {
         toast.error('No hay productos publicados para el catálogo.', { id: t })
         return
       }
-      const pages = await downloadCatalog(all.items, (done, total) =>
+
+      // Traer el detalle de cada producto (variantes: tamaños y precios), con concurrencia limitada
+      const catalogProducts: CatalogProduct[] = []
+      let loaded = 0
+      const LIMIT = 6
+      let idx = 0
+      async function worker() {
+        while (idx < list.length) {
+          const p = list[idx++]
+          let variants: CatalogVariant[] = []
+          try {
+            const detail = await productsService.getById(p.id)
+            variants = detail.variants
+              .filter(v => v.isActive)
+              .map(v => {
+                const sizeStr = Object.values(v.attributes).find(x => /\d+\s?ml/i.test(x))
+                  ?? Object.values(v.attributes)[0] ?? ''
+                const mlMatch = sizeStr.match(/(\d+)\s?ml/i)
+                return {
+                  label: sizeStr || '',
+                  price: v.price ?? detail.basePrice,
+                  ml: mlMatch ? Number(mlMatch[1]) : 0,
+                } as CatalogVariant
+              })
+          } catch {
+            variants = []
+          }
+          if (variants.length === 0) variants = [{ label: '', price: p.basePrice, ml: 0 }]
+          catalogProducts.push({
+            name: p.name,
+            categoryName: p.categoryName,
+            imageUrl: p.mainImageUrl,
+            soldOut: p.totalStock <= 0,
+            variants,
+          })
+          loaded++
+          toast.loading(`Cargando productos… ${loaded}/${list.length}`, { id: t })
+        }
+      }
+      await Promise.all(Array.from({ length: LIMIT }, worker))
+
+      const pages = await downloadCatalog(catalogProducts, (done, total) =>
         toast.loading(`Generando catálogo… ${done}/${total} imágenes`, { id: t }),
       )
       toast.success(`Catálogo listo: ZIP con ${pages} ${pages === 1 ? 'imagen' : 'imágenes'} descargado`, { id: t })

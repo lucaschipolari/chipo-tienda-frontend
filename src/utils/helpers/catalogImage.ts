@@ -1,49 +1,72 @@
 import JSZip from 'jszip'
 import { formatMoney } from './formatMoney'
-import type { ProductListItem } from '@/types/catalog.types'
 
 /**
- * catalogImage — genera imágenes de catálogo (una o varias por categoría) con
- * la identidad de la tienda (negro + dorado): header elegante + grilla 3×4 de
- * tarjetas con marca, foto, nombre, tamaño y precio. Los agotados llevan sello
- * "AGOTADO". Al pie: WhatsApp, Instagram y fecha. Todo se empaqueta en un ZIP.
+ * catalogImage — genera imágenes de catálogo (1080×1920, formato Instagram)
+ * al estilo de las placas: header serif "CATEGORÍA / Originales", grilla 3×4 de
+ * tarjetas blancas con marca, foto, nombre, concentración, tamaño y precio en
+ * píldora negra. Los decants muestran sus dos tamaños (5ml/10ml) con su precio.
+ * Categorías "Diseñador" → fondo oscuro; el resto → fondo claro. Solo blanco y
+ * negro. Al pie: WhatsApp, Instagram y fecha. Todo se empaqueta en un ZIP.
  */
 
-// ── Paleta de la marca ──
-const PAGE_BG_TOP = '#111111'
-const PAGE_BG_BOT = '#050505'
-const CARD_BG = '#161616'
-const CARD_RING = 'rgba(255,255,255,0.08)'
-const GOLD = '#E6C15A'
-const WHITE = '#FFFFFF'
-const MUTED = 'rgba(255,255,255,0.45)'
+// ── Paleta (solo blanco y negro) ──
+const CARD_BG = '#FFFFFF'
+const INK = '#111111'
+const MUTED = '#8a8a8a'
+const PILL = '#0A0A0A'
 
-// ── Datos de contacto de la tienda ──
+// Fondo claro (Árabes/Decants) vs oscuro (Diseñador)
+const LIGHT_TOP = '#F4F2EC', LIGHT_BOT = '#E9E6DF'
+const DARK_TOP = '#1c1c1c', DARK_BOT = '#080808'
+
+const DEFAULT_CONC = 'Eau de Parfum'
+
+// ── Datos de contacto ──
 const PHONE = '381 346 2606'
 const INSTAGRAM = '@chipo.ar'
 
-// Marcas de varias palabras: para separar bien "marca" del "nombre".
+// Marcas de varias palabras (para separar "marca" del "nombre").
 const KNOWN_BRANDS = [
   'Jean Paul Gaultier', 'Paco Rabanne', 'Giorgio Armani', 'Yves Saint Laurent',
-  'Carolina Herrera', 'Maison Alhambra', 'Lattafa Pride', 'Armaf', 'Lattafa',
-  'Rasasi', 'Rayhaan', 'Montale', 'Mancera', 'Versace', 'Dior', 'Chanel',
-  'Bharara', 'Afnan', 'Al Haramain', 'Nishane', 'Xerjoff', 'Creed', 'Azzaro',
-  'Philos', 'Odyssey', 'Maison', 'Armani', 'Valentino', 'Prada', 'Gucci',
+  'Carolina Herrera', 'Maison Alhambra', 'Al Haramain', 'Lattafa Pride',
+  'Armaf', 'Lattafa', 'Rasasi', 'Rayhaan', 'Montale', 'Mancera', 'Versace',
+  'Dior', 'Chanel', 'Bharara', 'Afnan', 'Nishane', 'Xerjoff', 'Creed', 'Azzaro',
+  'Philos', 'Odyssey', 'Armani', 'Valentino', 'Prada', 'Gucci', 'Givenchy',
+  'Kenzo', 'Arabiyat',
 ]
 
-interface CatalogCard {
-  brand: string
+// Abreviaturas de marca para que no desborden (como en tus placas).
+const BRAND_ABBR: Record<string, string> = {
+  'JEAN PAUL GAULTIER': 'J.P.G',
+  'YVES SAINT LAURENT': 'YVES SAINT L',
+  'PACO RABANNE': 'PACO RABANNE',
+}
+
+export interface CatalogVariant { label: string; price: number; ml: number }
+export interface CatalogProduct {
   name: string
-  size: string | null
-  price: number
+  categoryName?: string | null
   imageUrl?: string | null
   soldOut: boolean
+  concentration?: string | null
+  variants: CatalogVariant[]
+}
+
+interface Card {
+  brand: string
+  name: string
+  imageUrl?: string | null
+  soldOut: boolean
+  concentration: string
+  variants: CatalogVariant[]
 }
 
 function splitBrand(fullName: string): { brand: string; name: string } {
   for (const b of KNOWN_BRANDS) {
     if (fullName.toLowerCase().startsWith(b.toLowerCase() + ' ')) {
-      return { brand: b.toUpperCase(), name: fullName.slice(b.length).trim() }
+      const up = b.toUpperCase()
+      return { brand: BRAND_ABBR[up] ?? up, name: fullName.slice(b.length).trim() }
     }
   }
   const parts = fullName.split(' ')
@@ -51,26 +74,23 @@ function splitBrand(fullName: string): { brand: string; name: string } {
   return { brand: '', name: fullName }
 }
 
-function extractSize(name: string): string | null {
-  const m = name.match(/(\d+)\s?ml/i)
-  return m ? `${m[1]}ml` : null
-}
-
-function toCard(p: ProductListItem): CatalogCard {
+function toCard(p: CatalogProduct): Card {
   const { brand, name } = splitBrand(p.name)
+  // limpiar tamaño del nombre si quedó
+  const cleanName = name.replace(/\s*\(?\d+\s?ml\)?/i, '').trim() || name
   return {
     brand,
-    name: extractSize(name) ? name.replace(/\s*\(?\d+\s?ml\)?/i, '').trim() : name,
-    size: extractSize(p.name),
-    price: p.basePrice,
-    imageUrl: p.mainImageUrl,
-    soldOut: p.totalStock <= 0,
+    name: cleanName,
+    imageUrl: p.imageUrl,
+    soldOut: p.soldOut,
+    concentration: p.concentration || DEFAULT_CONC,
+    variants: [...p.variants].sort((a, b) => a.ml - b.ml),
   }
 }
 
-function proxied(url: string, size = 600): string {
+function proxied(url: string, size = 700): string {
   const noProto = url.replace(/^https?:\/\//, '')
-  return `https://images.weserv.nl/?url=${encodeURIComponent(`ssl:${noProto}`)}&w=${size}&h=${size}&fit=cover&output=jpg`
+  return `https://images.weserv.nl/?url=${encodeURIComponent(`ssl:${noProto}`)}&w=${size}&h=${size}&fit=contain&cbg=white&output=jpg`
 }
 
 function loadImage(src: string, crossOrigin = false): Promise<HTMLImageElement> {
@@ -100,139 +120,163 @@ function fitText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number):
   return t + '…'
 }
 
+/** Dibuja una píldora negra con texto blanco centrado en (cx). */
+function pill(ctx: CanvasRenderingContext2D, cx: number, top: number, w: number, h: number, text: string, font: string) {
+  ctx.fillStyle = PILL
+  roundRect(ctx, cx - w / 2, top, w, h, h / 2)
+  ctx.fill()
+  ctx.fillStyle = '#fff'
+  ctx.font = font
+  ctx.textAlign = 'center'
+  ctx.fillText(text, cx, top + h / 2 + 8)
+}
+
 const COLS = 3
 const ROWS = 4
 const PER_PAGE = COLS * ROWS // 12
 
-/** Dibuja una tarjeta de producto (tema oscuro) en la posición dada. */
-async function drawCard(ctx: CanvasRenderingContext2D, card: CatalogCard, x: number, y: number, w: number, h: number) {
-  // Tarjeta oscura con borde sutil
+async function drawCard(ctx: CanvasRenderingContext2D, card: Card, x: number, y: number, w: number, h: number) {
+  // Tarjeta blanca con sombra
   ctx.save()
-  ctx.shadowColor = 'rgba(0,0,0,0.5)'
-  ctx.shadowBlur = 20
+  ctx.shadowColor = 'rgba(0,0,0,0.18)'
+  ctx.shadowBlur = 22
   ctx.shadowOffsetY = 8
   ctx.fillStyle = CARD_BG
-  roundRect(ctx, x, y, w, h, 20)
+  roundRect(ctx, x, y, w, h, 22)
   ctx.fill()
   ctx.restore()
-  ctx.strokeStyle = CARD_RING
-  ctx.lineWidth = 1.5
-  roundRect(ctx, x, y, w, h, 20)
-  ctx.stroke()
 
-  const padX = 16
+  const cx = x + w / 2
+  const padX = 18
+
+  // Marca
+  ctx.fillStyle = INK
+  ctx.font = '800 26px Inter, sans-serif'
   ctx.textAlign = 'center'
-
-  // Marca (dorada)
-  ctx.fillStyle = GOLD
-  ctx.font = '800 22px Inter, sans-serif'
   if (card.brand) {
-    ctx.letterSpacing = '2px'
-    ctx.fillText(fitText(ctx, card.brand, w - padX * 2), x + w / 2, y + 36)
+    ctx.letterSpacing = '1px'
+    ctx.fillText(fitText(ctx, card.brand, w - padX * 2), cx, y + 44)
     ctx.letterSpacing = '0px'
   }
 
-  // Foto (cover dentro de un recuadro redondeado)
-  const imgTop = y + 52
-  const imgH = h * 0.44
+  // Foto (contain sobre blanco)
+  const imgTop = y + 58
+  const imgH = h * 0.36
   const imgW = w - padX * 2
-  const imgX = x + padX
-  ctx.save()
-  roundRect(ctx, imgX, imgTop, imgW, imgH, 12)
-  ctx.clip()
-  ctx.fillStyle = '#0d0d0d'
-  ctx.fillRect(imgX, imgTop, imgW, imgH)
   if (card.imageUrl) {
     try {
-      const img = await loadImage(proxied(card.imageUrl, 600), true)
-      const scale = Math.max(imgW / img.width, imgH / img.height)
+      const img = await loadImage(proxied(card.imageUrl, 700), true)
+      const scale = Math.min(imgW / img.width, imgH / img.height)
       const dw = img.width * scale, dh = img.height * scale
-      ctx.drawImage(img, imgX + (imgW - dw) / 2, imgTop + (imgH - dh) / 2, dw, dh)
+      ctx.drawImage(img, cx - dw / 2, imgTop + (imgH - dh) / 2, dw, dh)
     } catch { /* sin foto */ }
   }
-  ctx.restore()
 
   // Nombre
-  let ty = imgTop + imgH + 34
-  ctx.fillStyle = WHITE
-  ctx.font = '600 20px Inter, sans-serif'
-  ctx.letterSpacing = '0.5px'
-  ctx.fillText(fitText(ctx, card.name.toUpperCase(), w - padX * 2), x + w / 2, ty)
+  let ty = imgTop + imgH + 40
+  ctx.fillStyle = INK
+  ctx.font = '600 24px Inter, sans-serif'
+  ctx.letterSpacing = '1.5px'
+  ctx.fillText(fitText(ctx, card.name.toUpperCase(), w - padX * 2), cx, ty)
   ctx.letterSpacing = '0px'
 
-  // Subtítulo
-  ty += 24
+  // Concentración
+  ty += 28
   ctx.fillStyle = MUTED
-  ctx.font = '400 14px Inter, sans-serif'
-  ctx.fillText(card.size ? `Eau de Parfum · ${card.size}` : 'Eau de Parfum', x + w / 2, ty)
+  ctx.font = 'italic 400 17px Inter, sans-serif'
+  ctx.fillText(card.concentration.toLowerCase(), cx, ty)
 
-  // Píldora de precio / agotado (abajo de la tarjeta)
-  const pillW = 150, pillH = 40
-  const pillX = x + (w - pillW) / 2
-  const pillY = y + h - pillH - 16
+  const isMulti = card.variants.length >= 2
+
   if (card.soldOut) {
-    ctx.fillStyle = 'rgba(255,255,255,0.06)'
-    roundRect(ctx, pillX, pillY, pillW, pillH, 20)
-    ctx.fill()
-    ctx.strokeStyle = 'rgba(220,80,80,0.5)'
-    ctx.lineWidth = 1.5
-    roundRect(ctx, pillX, pillY, pillW, pillH, 20)
-    ctx.stroke()
-    ctx.fillStyle = '#e88'
-    ctx.font = '700 18px Inter, sans-serif'
-    ctx.fillText('AGOTADO', x + w / 2, pillY + 26)
+    const pw = 168, ph = 44
+    const top = y + h - ph - 20
+    ctx.fillStyle = '#fff'
+    roundRect(ctx, cx - pw / 2, top, pw, ph, ph / 2); ctx.fill()
+    ctx.strokeStyle = '#c0392b'; ctx.lineWidth = 2
+    roundRect(ctx, cx - pw / 2, top, pw, ph, ph / 2); ctx.stroke()
+    ctx.fillStyle = '#c0392b'; ctx.font = '800 20px Inter, sans-serif'; ctx.textAlign = 'center'
+    ctx.fillText('AGOTADO', cx, top + ph / 2 + 7)
+    return
+  }
+
+  if (isMulti) {
+    // Decant: fila por tamaño (label izquierda + píldora precio derecha)
+    const rows = card.variants.slice(0, 2)
+    const rowH = 42
+    const pillW = 148, pillH = 38
+    const startTop = ty + 14
+    for (let i = 0; i < rows.length; i++) {
+      const v = rows[i]
+      const rowY = startTop + i * rowH
+      ctx.font = '600 20px Inter, sans-serif'
+      const labelW = ctx.measureText(v.label).width
+      const gap = 14
+      const totalW = labelW + gap + pillW
+      const sx = cx - totalW / 2
+      ctx.fillStyle = INK
+      ctx.textAlign = 'left'
+      ctx.fillText(v.label, sx, rowY + pillH / 2 + 7)
+      pill(ctx, sx + labelW + gap + pillW / 2, rowY, pillW, pillH, `$${formatMoney(v.price)}`, '800 22px Inter, sans-serif')
+    }
   } else {
-    ctx.fillStyle = GOLD
-    roundRect(ctx, pillX, pillY, pillW, pillH, 20)
-    ctx.fill()
-    ctx.fillStyle = '#0A0A0A'
-    ctx.font = '800 23px Inter, sans-serif'
-    ctx.fillText(`$${formatMoney(card.price)}`, x + w / 2, pillY + 28)
+    // Producto simple: tamaño + una píldora
+    const v = card.variants[0]
+    if (v?.label) {
+      ty += 26
+      ctx.fillStyle = INK
+      ctx.font = '500 19px Inter, sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText(v.label, cx, ty)
+    }
+    const pw = 172, ph = 46
+    const top = y + h - ph - 22
+    pill(ctx, cx, top, pw, ph, `$${formatMoney(v?.price ?? 0)}`, '800 26px Inter, sans-serif')
   }
 }
 
-/** Renderiza UNA página del catálogo y devuelve el canvas. */
 async function renderPage(
   categoryName: string,
-  cards: CatalogCard[],
+  cards: Card[],
   pageIndex: number,
   totalPages: number,
+  dark: boolean,
   dateStr: string,
   logo: HTMLImageElement | null,
 ): Promise<HTMLCanvasElement> {
   if (document.fonts?.ready) { try { await document.fonts.ready } catch { /* noop */ } }
 
-  const W = 1080, H = 1720
+  const W = 1080, H = 1920
   const canvas = document.createElement('canvas')
   canvas.width = W; canvas.height = H
   const ctx = canvas.getContext('2d')!
 
-  // Fondo con gradiente sutil
   const grad = ctx.createLinearGradient(0, 0, 0, H)
-  grad.addColorStop(0, PAGE_BG_TOP)
-  grad.addColorStop(1, PAGE_BG_BOT)
+  grad.addColorStop(0, dark ? DARK_TOP : LIGHT_TOP)
+  grad.addColorStop(1, dark ? DARK_BOT : LIGHT_BOT)
   ctx.fillStyle = grad
   ctx.fillRect(0, 0, W, H)
 
+  const headInk = dark ? '#FFFFFF' : '#111111'
+
   // ── Header ──
   ctx.textAlign = 'center'
-  ctx.fillStyle = WHITE
-  ctx.font = '700 90px "Playfair Display", serif'
-  ctx.fillText(categoryName.toUpperCase(), W / 2, 120)
-  ctx.font = 'italic 600 58px "Playfair Display", serif'
-  ctx.fillStyle = GOLD
-  ctx.fillText('Originales', W / 2, 190)
+  ctx.fillStyle = headInk
+  ctx.font = '700 108px "Playfair Display", serif'
+  ctx.fillText(categoryName.toUpperCase(), W / 2, 150)
+  ctx.font = 'italic 600 74px "Playfair Display", serif'
+  ctx.fillText('Originales', W / 2, 245)
   if (totalPages > 1) {
-    ctx.fillStyle = MUTED
-    ctx.font = '500 22px Inter, sans-serif'
-    ctx.fillText(`${pageIndex + 1} / ${totalPages}`, W / 2, 228)
+    ctx.fillStyle = dark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)'
+    ctx.font = '500 24px Inter, sans-serif'
+    ctx.fillText(`${pageIndex + 1} / ${totalPages}`, W / 2, 290)
   }
 
   // ── Grilla 3×4 ──
-  const gridTop = 270
-  const footerH = 96
-  const gap = 22
-  const marginX = 36
+  const gridTop = 340
+  const footerH = 120
+  const gap = 24
+  const marginX = 40
   const cellW = (W - marginX * 2 - gap * (COLS - 1)) / COLS
   const cellH = (H - gridTop - footerH - gap * (ROWS - 1)) / ROWS
 
@@ -245,32 +289,25 @@ async function renderPage(
   }
 
   // ── Footer: contacto + fecha ──
-  const fy = H - footerH + 30
-  // línea divisoria
-  ctx.strokeStyle = 'rgba(255,255,255,0.10)'
+  const fy = H - footerH + 44
+  ctx.strokeStyle = dark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)'
   ctx.lineWidth = 1
-  ctx.beginPath()
-  ctx.moveTo(marginX, fy - 22)
-  ctx.lineTo(W - marginX, fy - 22)
-  ctx.stroke()
+  ctx.beginPath(); ctx.moveTo(marginX, fy - 26); ctx.lineTo(W - marginX, fy - 26); ctx.stroke()
 
-  // logo a la izquierda
-  if (logo) {
-    const lh = 34, lw = (logo.width / logo.height) * lh
-    ctx.drawImage(logo, marginX, fy - 4, lw, lh)
+  if (logo && dark) {
+    const lh = 38, lw = (logo.width / logo.height) * lh
+    ctx.drawImage(logo, marginX, fy - 6, lw, lh)
   }
 
-  // contacto centrado
   ctx.textAlign = 'center'
-  ctx.fillStyle = 'rgba(255,255,255,0.75)'
-  ctx.font = '600 26px Inter, sans-serif'
-  ctx.fillText(`WhatsApp ${PHONE}   ·   Instagram ${INSTAGRAM}`, W / 2, fy + 22)
+  ctx.fillStyle = dark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.72)'
+  ctx.font = '600 28px Inter, sans-serif'
+  ctx.fillText(`WhatsApp ${PHONE}   ·   Instagram ${INSTAGRAM}`, W / 2, fy + 24)
 
-  // fecha a la derecha
   ctx.textAlign = 'right'
-  ctx.fillStyle = MUTED
-  ctx.font = '400 20px Inter, sans-serif'
-  ctx.fillText(dateStr, W - marginX, fy + 22)
+  ctx.fillStyle = dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)'
+  ctx.font = '400 22px Inter, sans-serif'
+  ctx.fillText(dateStr, W - marginX, fy + 24)
 
   return canvas
 }
@@ -284,29 +321,29 @@ function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
 function download(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
+  a.href = url; a.download = filename
+  document.body.appendChild(a); a.click(); a.remove()
   setTimeout(() => URL.revokeObjectURL(url), 3000)
 }
 
+function isDesignerCategory(cat: string): boolean {
+  const n = cat.toLowerCase()
+  return n.includes('diseñ') || n.includes('disen')
+}
+
 /**
- * Genera el catálogo por categoría y descarga TODO en un ZIP.
+ * Genera el catálogo por categoría (1080×1920) y descarga TODO en un ZIP.
  * @returns cantidad de imágenes generadas.
  */
 export async function downloadCatalog(
-  products: ProductListItem[],
+  products: CatalogProduct[],
   onProgress?: (done: number, total: number) => void,
 ): Promise<number> {
-  // Fecha legible (dd/mm/aaaa) — se ejecuta en el navegador
   const now = new Date()
   const dateStr = now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
   const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
-  // Agrupar por categoría, excluyendo insumos internos ("Empaque")
-  const groups = new Map<string, ProductListItem[]>()
+  const groups = new Map<string, CatalogProduct[]>()
   for (const p of products) {
     const cat = (p.categoryName ?? 'Otros').trim()
     if (cat.toLowerCase() === 'empaque') continue
@@ -324,11 +361,12 @@ export async function downloadCatalog(
   let done = 0
 
   for (const [cat, list] of groups) {
+    const dark = isDesignerCategory(cat)
     const cards = list.map(toCard)
     const pages = Math.max(1, Math.ceil(cards.length / PER_PAGE))
     for (let p = 0; p < pages; p++) {
       const slice = cards.slice(p * PER_PAGE, (p + 1) * PER_PAGE)
-      const canvas = await renderPage(cat, slice, p, pages, dateStr, logo)
+      const canvas = await renderPage(cat, slice, p, pages, dark, dateStr, logo)
       const blob = await canvasToBlob(canvas)
       const safeCat = cat.replace(/[^\w\sáéíóúñ-]/gi, '').trim().replace(/\s+/g, '-')
       const suffix = pages > 1 ? `-${p + 1}` : ''
