@@ -20,6 +20,8 @@ import { useCategories, flattenCategories } from '@/features/categories/hooks/us
 import { cn } from '@/utils/helpers/cn'
 import { formatCurrency } from '@/utils/formatters/currency'
 import { downloadProductPlaca } from '@/utils/helpers/productPlaca'
+import { downloadCatalog } from '@/utils/helpers/catalogImage'
+import { productsService } from '@/features/products/productsService'
 import { toast } from 'sonner'
 import type {
   ProductListItem, ProductStatus, ProductImage,
@@ -1173,6 +1175,28 @@ export default function ProductsPage() {
   const { data: categories } = useCategories()
   const flatCats = categories ? flattenCategories(categories) : []
 
+  // ── Generar catálogo (imágenes por categoría para WhatsApp) ──
+  const [catalogBusy, setCatalogBusy] = useState(false)
+  async function handleGenerateCatalog() {
+    setCatalogBusy(true)
+    const t = toast.loading('Generando catálogo…')
+    try {
+      const all = await productsService.getAll({ page: 1, pageSize: 500, status: 'Published' })
+      if (!all.items.length) {
+        toast.error('No hay productos publicados para el catálogo.', { id: t })
+        return
+      }
+      const pages = await downloadCatalog(all.items, (done, total) =>
+        toast.loading(`Generando catálogo… ${done}/${total} imágenes`, { id: t }),
+      )
+      toast.success(`Catálogo listo: ${pages} ${pages === 1 ? 'imagen descargada' : 'imágenes descargadas'}`, { id: t })
+    } catch {
+      toast.error('No se pudo generar el catálogo.', { id: t })
+    } finally {
+      setCatalogBusy(false)
+    }
+  }
+
   const stats = {
     total:     data?.totalCount ?? 0,
     published: data?.items.filter(p => p.status === 'Published').length ?? 0,
@@ -1186,12 +1210,24 @@ export default function ProductsPage() {
           <h1 className="text-2xl font-display font-semibold text-white tracking-wide">Productos</h1>
           <p className="text-sm text-neutral-500 mt-0.5">Gestión del catálogo de fragancias</p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-black font-semibold text-sm transition-colors"
-        >
-          <Plus className="h-4 w-4" /> Nuevo producto
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleGenerateCatalog}
+            disabled={catalogBusy}
+            title="Genera imágenes del catálogo por categoría, listas para WhatsApp"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gold-500/40 text-gold-400 hover:bg-gold-500/10 font-semibold text-sm transition-colors disabled:opacity-50"
+          >
+            {catalogBusy
+              ? <><Loader2 className="h-4 w-4 animate-spin" /> Generando…</>
+              : <><ImageDown className="h-4 w-4" /> Descargar catálogo</>}
+          </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-black font-semibold text-sm transition-colors"
+          >
+            <Plus className="h-4 w-4" /> Nuevo producto
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
