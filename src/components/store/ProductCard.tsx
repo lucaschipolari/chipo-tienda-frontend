@@ -6,6 +6,7 @@ import { useFavoritesStore } from '@/store/favoritesStore'
 import { useCartStore } from '@/store/cartStore'
 import { cn } from '@/utils/helpers/cn'
 import { formatMoney } from '@/utils/helpers/formatMoney'
+import { track } from '@/features/analytics/analyticsService'
 import type { ProductListItem } from '@/types/catalog.types'
 
 /**
@@ -23,6 +24,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
 
   // Abre el detalle como modal escribiendo ?p=<id> en la URL (compartible).
   function openModal(id: string) {
+    track('view', { productId: id })
     const next = new URLSearchParams(params)
     next.set('p', id)
     setParams(next)

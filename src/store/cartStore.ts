@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { devtools, persist, createJSONStorage } from 'zustand/middleware'
+import { track } from '@/features/analytics/analyticsService'
 
 // ─── Tipos del carrito ────────────────────────────────────────────────────────
 
@@ -116,6 +117,8 @@ export const useCartStore = create<CartStore>()(
               { ...newItem, quantity: clampQty(newItem.quantity ?? 1, newItem.maxStock) },
             ]
           }
+
+          track('cart', { productId: newItem.productId })
 
           set(
             {

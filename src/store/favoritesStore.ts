@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
+import { track } from '@/features/analytics/analyticsService'
 
 /**
  * favoritesStore — favoritos del comprador, persistidos en localStorage.
@@ -36,6 +37,7 @@ export const useFavoritesStore = create<FavoritesState & FavoritesActions>()(
 
         toggle: (item) => {
           const exists = get().items.some(i => i.productId === item.productId)
+          if (!exists) track('favorite', { productId: item.productId })
           set(
             {
               items: exists

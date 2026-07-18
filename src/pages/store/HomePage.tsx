@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { Search, Loader2, Package, ShieldCheck, Users, Truck, ImageIcon } from 'lucide-react'
 import { useProducts } from '@/features/products/hooks/useProducts'
 import { useCategories, flattenCategories } from '@/features/categories/hooks/useCategories'
@@ -6,6 +6,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { cn } from '@/utils/helpers/cn'
 import { ProductCard } from '@/components/store/ProductCard'
 import { Reveal } from '@/components/store/Reveal'
+import { track } from '@/features/analytics/analyticsService'
 
 // ─── Sección de confianza / originalidad ───────────────────────────────────────
 
@@ -96,6 +97,16 @@ export default function HomePage() {
     search: debounced.trim() || undefined,
     status: 'Published',
   })
+
+  // Registrar búsquedas (una vez por término, cuando llegan resultados)
+  const lastTracked = useRef<string>('')
+  useEffect(() => {
+    const term = debounced.trim()
+    if (!term || isLoading || !data) return
+    if (lastTracked.current === term.toLowerCase()) return
+    lastTracked.current = term.toLowerCase()
+    track('search', { searchTerm: term, resultCount: data.totalCount ?? data.items.length ?? 0 })
+  }, [debounced, data, isLoading])
 
   const products = useMemo(() => {
     const arr = [...(data?.items ?? [])]
