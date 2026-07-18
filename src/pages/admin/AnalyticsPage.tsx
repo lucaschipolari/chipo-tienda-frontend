@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import {
-  Eye, ShoppingCart, Heart, Search, Users, TrendingUp, TrendingDown, Package, Loader2,
+  Eye, ShoppingCart, Heart, Search, Users, TrendingUp, TrendingDown, Package, Loader2, DollarSign,
 } from 'lucide-react'
 import { useAnalyticsDashboard } from '@/features/analytics/hooks/useAnalytics'
 import type { ProductStat, SearchStat } from '@/features/analytics/analyticsService'
@@ -140,15 +140,16 @@ export default function AnalyticsPage() {
             <KpiCard label="Búsquedas" value={s?.totalSearches ?? 0} icon={<Search className="h-4 w-4" />} />
           </div>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <KpiCard label="Productos distintos vistos" value={s?.uniqueProductsViewed ?? 0} icon={<Package className="h-4 w-4" />} />
-            <KpiCard label="Agregados al carrito" value={s?.totalAddToCart ?? 0} icon={<ShoppingCart className="h-4 w-4" />} />
+            <KpiCard label="Unidades vendidas" value={s?.totalUnitsSold ?? 0} icon={<DollarSign className="h-4 w-4" />} />
             <KpiCard label="Favoritos marcados" value={s?.totalFavorites ?? 0} icon={<Heart className="h-4 w-4" />} />
+            <KpiCard label="Productos distintos vistos" value={s?.uniqueProductsViewed ?? 0} icon={<Package className="h-4 w-4" />} />
             <KpiCard label="Búsquedas sin resultado" value={data?.noResultSearches.reduce((a, b) => a + b.count, 0) ?? 0} icon={<Search className="h-4 w-4" />} />
           </div>
 
           {/* Rankings */}
           <div className="grid gap-4 lg:grid-cols-2">
             <ProductTable title="Más vistos (les llama la atención)" icon={<Eye className="h-4 w-4" />} rows={data?.topViewed ?? []} />
+            <ProductTable title="Más vendidos (ventas reales)" icon={<DollarSign className="h-4 w-4" />} rows={data?.topSold ?? []} showConversion />
             <ProductTable title="Más agregados al carrito" icon={<ShoppingCart className="h-4 w-4" />} rows={data?.topAddedToCart ?? []} showConversion />
             <ProductTable title="Más marcados como favoritos" icon={<Heart className="h-4 w-4" />} rows={data?.topFavorited ?? []} />
             <SearchTable title="Búsquedas más frecuentes" icon={<Search className="h-4 w-4" />} rows={data?.topSearches ?? []} />

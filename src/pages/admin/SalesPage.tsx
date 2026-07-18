@@ -206,7 +206,7 @@ export default function SalesPage() {
         <Pagination page={page} pageSize={20} total={data.totalCount} onPageChange={setPage} />
       )}
 
-      <Modal open={!!detailId} onClose={() => setDetailId(null)} title="Detalle de venta">
+      <Modal isOpen={!!detailId} onClose={() => setDetailId(null)} title="Detalle de venta">
         {detailId && <SaleDetail saleId={detailId} />}
       </Modal>
     </div>

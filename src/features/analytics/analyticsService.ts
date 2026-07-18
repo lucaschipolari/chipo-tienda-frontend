@@ -57,6 +57,7 @@ export interface AnalyticsSummary {
   uniqueProductsViewed: number
   viewToCartRate: number
   viewsVsPreviousPeriod: number
+  totalUnitsSold: number
 }
 export interface AnalyticsDashboard {
   from: string
@@ -65,6 +66,7 @@ export interface AnalyticsDashboard {
   topViewed: ProductStat[]
   topAddedToCart: ProductStat[]
   topFavorited: ProductStat[]
+  topSold: ProductStat[]
   topSearches: SearchStat[]
   noResultSearches: SearchStat[]
 }
