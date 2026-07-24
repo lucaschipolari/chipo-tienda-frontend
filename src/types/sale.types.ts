@@ -66,6 +66,7 @@ export interface CreateSaleRequest {
   channel: SaleChannel
   currency: string
   notes?: string
+  saleDate?: string
 }
 
 export interface GetSalesParams {

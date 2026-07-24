@@ -416,6 +416,7 @@ export default function NewSalePage() {
   const [currency,    setCurrency]    = useState('ARS')
   const [globalDisc,  setGlobalDisc]  = useState(0)   // % descuento global 0..100
   const [notes,       setNotes]       = useState('')
+  const [saleDate,    setSaleDate]    = useState('')  // fecha de la venta (vacío = hoy)
 
   // ── Carrito: agregar / actualizar ─────────────────────────────────────────
 
@@ -489,6 +490,8 @@ export default function NewSalePage() {
       channel,
       currency,
       notes:         notes.trim() || undefined,
+      // Fecha elegida (a mediodía UTC para evitar corrimiento de día); vacío = ahora
+      saleDate:      saleDate ? `${saleDate}T12:00:00Z` : undefined,
     }
 
     createMutation.mutate(req, {
@@ -730,6 +733,19 @@ export default function NewSalePage() {
               </span>
             </div>
           </section>
+
+          {/* Fecha de la venta */}
+          <div>
+            <label className="block text-xs text-neutral-500 mb-1.5">
+              Fecha de la venta <span className="text-neutral-600">(dejalo vacío para hoy)</span>
+            </label>
+            <input
+              type="date"
+              value={saleDate}
+              onChange={e => setSaleDate(e.target.value)}
+              className="w-full bg-obsidian-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-gold-500"
+            />
+          </div>
 
           {/* Notas */}
           <div>
