@@ -2,15 +2,16 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ShoppingCart, Plus, Eye, BarChart2, Store,
-  Phone, MessageCircle, CreditCard, Banknote, Wifi,
+  Phone, MessageCircle, CreditCard, Banknote, Wifi, Pencil,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button }     from '@/components/ui/Button/Button'
 import { Modal }      from '@/components/ui/Modal/Modal'
 import { Badge }      from '@/components/ui/Badge/Badge'
 import { StatCard }   from '@/components/data-display/StatCard/StatCard'
 import { Pagination } from '@/components/data-display/Pagination/Pagination'
 import { cn }         from '@/utils/helpers/cn'
-import { useSales, useSale } from '@/features/sales/hooks/useSales'
+import { useSales, useSale, useUpdateSale } from '@/features/sales/hooks/useSales'
 import type { SaleListItem, SaleChannel } from '@/types/sale.types'
 import { formatMoney } from '@/utils/helpers/formatMoney'
 
@@ -35,13 +36,76 @@ const PAYMENT_CONFIG: Record<string, { label: string; icon: React.ReactNode }> =
 
 // ─── Sale Detail ─────────────────────────────────────────────────────────────
 
+function SaleEditForm({ sale, onDone }: { sale: any; onDone: () => void }) {
+  const { mutate, isPending } = useUpdateSale()
+  const [date, setDate] = useState((sale.createdAt ?? '').slice(0, 10))
+  const [payment, setPayment] = useState<string>(sale.paymentMethod ?? 'Cash')
+  const [customerName, setCustomerName] = useState(sale.customerName ?? '')
+  const [notes, setNotes] = useState(sale.notes ?? '')
+
+  function save() {
+    mutate({ id: sale.id, data: {
+      paymentMethod: payment,
+      notes: notes.trim() || undefined,
+      customerName: customerName.trim() || undefined,
+      saleDate: date ? `${date}T12:00:00Z` : undefined,
+    } }, {
+      onSuccess: () => { toast.success('Venta actualizada.'); onDone() },
+      onError: (e: any) => toast.error(e?.response?.data?.errors?.message ?? 'No se pudo actualizar la venta.'),
+    })
+  }
+
+  const inputCls = 'w-full bg-obsidian-900 border border-neutral-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-gold-500'
+  return (
+    <div className="space-y-4">
+      <p className="text-sm font-semibold text-white">Editar venta {sale.saleNumber}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs text-neutral-500 mb-1.5">Fecha</label>
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} className={inputCls} />
+        </div>
+        <div>
+          <label className="block text-xs text-neutral-500 mb-1.5">Método de pago</label>
+          <select value={payment} onChange={e => setPayment(e.target.value)} className={inputCls}>
+            {Object.entries(PAYMENT_CONFIG).map(([v, c]) => <option key={v} value={v}>{c.label}</option>)}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs text-neutral-500 mb-1.5">Cliente (opcional)</label>
+        <input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Nombre del cliente" className={inputCls} />
+      </div>
+      <div>
+        <label className="block text-xs text-neutral-500 mb-1.5">Notas (opcional)</label>
+        <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={inputCls + ' resize-none'} />
+      </div>
+      <div className="flex gap-2 justify-end">
+        <button onClick={onDone} className="px-4 py-2 rounded-xl border border-neutral-700 text-sm text-neutral-300 hover:text-white">Cancelar</button>
+        <Button onClick={save} isLoading={isPending}>Guardar cambios</Button>
+      </div>
+      <p className="text-[11px] text-neutral-600">Nota: se editan fecha, pago, cliente y notas. Los productos y montos no se modifican (para eso, borrá y volvé a crear la venta).</p>
+    </div>
+  )
+}
+
 function SaleDetail({ saleId }: { saleId: string }) {
   const { data: sale, isLoading } = useSale(saleId)
+  const [editing, setEditing] = useState(false)
   if (isLoading) return <div className="py-8 text-center text-neutral-500">Cargando...</div>
   if (!sale) return null
 
+  if (editing) return <SaleEditForm sale={sale} onDone={() => setEditing(false)} />
+
   return (
     <div className="space-y-5">
+      <div className="flex justify-end">
+        <button
+          onClick={() => setEditing(true)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neutral-700 text-xs text-neutral-300 hover:text-white hover:border-neutral-500 transition-colors"
+        >
+          <Pencil className="h-3.5 w-3.5" /> Editar
+        </button>
+      </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-obsidian-900 rounded-xl p-4">
           <p className="text-xs text-neutral-500">Número de venta</p>
@@ -142,7 +206,7 @@ export default function SalesPage() {
 
       {/* Table */}
       <div className="rounded-2xl border border-neutral-800 overflow-hidden" style={{ background: 'var(--surface)' }}>
-        <div className="overflow-x-auto"><table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-sm">
           <thead className="border-b border-neutral-800">
             <tr>
               <th className="text-left px-4 py-3 text-neutral-500 font-medium">Venta</th>
@@ -191,7 +255,7 @@ export default function SalesPage() {
                     {new Date(sale.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => setDetailId(sale.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-obsidian-800 text-neutral-500 hover:text-white transition-all">
+                    <button onClick={() => setDetailId(sale.id)} title="Ver detalle" className="p-1.5 rounded-lg text-neutral-400 hover:bg-obsidian-800 hover:text-white transition-all sm:opacity-0 sm:group-hover:opacity-100">
                       <Eye className="h-4 w-4" />
                     </button>
                   </td>

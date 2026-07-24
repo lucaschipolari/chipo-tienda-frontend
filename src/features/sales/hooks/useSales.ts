@@ -38,6 +38,18 @@ export function useCreateSale() {
   })
 }
 
+export function useUpdateSale() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: import('../salesService').UpdateSaleRequest }) =>
+      salesService.update(id, data),
+    onSuccess: (_r, { id }) => {
+      qc.invalidateQueries({ queryKey: saleKeys.lists() })
+      qc.invalidateQueries({ queryKey: saleKeys.detail(id) })
+    },
+  })
+}
+
 export function useSalesReport(from: string, to: string) {
   return useQuery({
     queryKey: saleKeys.report(from, to),
