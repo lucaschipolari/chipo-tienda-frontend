@@ -20,6 +20,9 @@ export const purchasesService = {
   create: (data: CreatePurchaseOrderRequest) =>
     httpClient.post<{ id: string }>(BASE, data),
 
+  update: (id: string, data: CreatePurchaseOrderRequest) =>
+    httpClient.put<void>(`${BASE}/${id}`, { ...data, id }),
+
   send: (id: string) =>
     httpClient.post<void>(`${BASE}/${id}/send`),
 

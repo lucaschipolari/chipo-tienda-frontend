@@ -46,6 +46,18 @@ export function useCreatePurchaseOrder() {
   })
 }
 
+export function useUpdatePurchaseOrder() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: CreatePurchaseOrderRequest }) =>
+      purchasesService.update(id, data),
+    onSuccess: (_r, { id }) => {
+      qc.invalidateQueries({ queryKey: purchaseKeys.lists() })
+      qc.invalidateQueries({ queryKey: purchaseKeys.detail(id) })
+    },
+  })
+}
+
 export function useSendPurchaseOrder() {
   const qc = useQueryClient()
   return useMutation({

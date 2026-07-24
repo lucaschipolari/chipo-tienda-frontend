@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   Plus, Eye, ShoppingBag, Package, Truck, X, CheckCircle,
-  XCircle, Clock, Send, ThumbsUp, ClipboardCheck,
+  XCircle, Clock, Send, ThumbsUp, ClipboardCheck, Pencil,
 } from 'lucide-react'
 import { Button }     from '@/components/ui/Button/Button'
 import { Modal }      from '@/components/ui/Modal/Modal'
@@ -220,6 +220,7 @@ function PurchaseDetail({
   purchaseId: string
   onClose: () => void
 }) {
+  const navigate = useNavigate()
   const { data: po, isLoading } = usePurchaseOrder(purchaseId)
   const sendMutation    = useSendPurchaseOrder()
   const approveMutation = useApprovePurchaseOrder()
@@ -252,6 +253,7 @@ function PurchaseDetail({
     })
   }
 
+  const canEdit    = po.status === 'Draft'
   const canSend    = po.status === 'Draft'
   const canApprove = po.status === 'Sent'
   const canReceive = po.status === 'Approved' || po.status === 'PartiallyReceived'
@@ -369,8 +371,18 @@ function PurchaseDetail({
       </div>
 
       {/* Action buttons */}
-      {(canSend || canApprove || canReceive || canCancel) && (
+      {(canEdit || canSend || canApprove || canReceive || canCancel) && (
         <div className="flex flex-wrap gap-2 pt-1">
+          {canEdit && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => { onClose(); navigate(`/admin/purchases/${po.id}/edit`) }}
+              leftIcon={<Pencil className="h-3.5 w-3.5" />}
+            >
+              Editar
+            </Button>
+          )}
           {canSend && (
             <Button
               size="sm"
@@ -484,8 +496,8 @@ export default function PurchasesPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl border border-neutral-800 overflow-hidden" style={{ background: 'var(--surface)' }}>
-        <table className="w-full text-sm">
+      <div className="rounded-2xl border border-neutral-800 overflow-x-auto" style={{ background: 'var(--surface)' }}>
+        <table className="w-full min-w-[720px] text-sm">
           <thead className="border-b border-neutral-800">
             <tr>
               <th className="text-left px-4 py-3 text-neutral-500 font-medium">N° Orden</th>
@@ -544,7 +556,8 @@ export default function PurchasesPage() {
                   <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => setDetailId(po.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-obsidian-800 text-neutral-500 hover:text-white transition-all"
+                      title="Ver detalle"
+                      className="p-1.5 rounded-lg text-neutral-400 hover:bg-obsidian-800 hover:text-white transition-all sm:opacity-0 sm:group-hover:opacity-100"
                     >
                       <Eye className="h-4 w-4" />
                     </button>

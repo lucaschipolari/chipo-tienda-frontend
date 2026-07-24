@@ -125,6 +125,7 @@ export const router = createBrowserRouter([
               // Compras
               { path: '/admin/purchases',        element: withSuspense(PurchasesPage) },
               { path: '/admin/purchases/new',    element: withSuspense(NewPurchaseOrderPage) },
+              { path: '/admin/purchases/:id/edit', element: withSuspense(NewPurchaseOrderPage) },
               { path: '/admin/purchases/:id',     element: withSuspense(PurchasesPage) },
               { path: '/admin/suppliers',             element: withSuspense(SuppliersPage) },
               { path: '/admin/suppliers/new',      element: withSuspense(NewSupplierPage) },

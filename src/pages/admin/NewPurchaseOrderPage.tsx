@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   ArrowLeft, ShoppingBag, Search, Plus, Minus, Trash2,
@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/Button/Button'
 import { cn }    from '@/utils/helpers/cn'
 import { useSuppliers } from '@/features/suppliers/hooks/useSuppliers'
 import { useProducts, useProduct } from '@/features/products/hooks/useProducts'
-import { useCreatePurchaseOrder } from '@/features/purchases/hooks/usePurchases'
+import { useCreatePurchaseOrder, useUpdatePurchaseOrder, usePurchaseOrder } from '@/features/purchases/hooks/usePurchases'
 import type { SupplierListItem } from '@/types/supplier.types'
 import type { ProductListItem, ProductVariant } from '@/types/catalog.types'
 import type { CreatePurchaseOrderRequest, CreatePurchaseOrderItemRequest } from '@/types/purchase.types'
@@ -190,7 +190,10 @@ function ProductSearch({ onAdd, currency }: { onAdd: (item: POItem) => void; cur
   function handleAddVariant(variant: ProductVariant) {
     if (!selectedBase) return
     const costStr = costInputs[variant.id]
-    const unitCost = costStr ? parseFloat(costStr) : 0
+    // Autocompleta con el costo guardado del producto si no escribió otro.
+    const unitCost = costStr !== undefined && costStr !== ''
+      ? parseFloat(costStr)
+      : (variant.cost ?? 0)
     onAdd({
       key:         `${selectedBase.id}-${variant.id}`,
       productId:   selectedBase.id,
@@ -303,8 +306,8 @@ function ProductSearch({ onAdd, currency }: { onAdd: (item: POItem) => void; cur
                         type="number"
                         min={0}
                         step={0.01}
-                        placeholder="0.00"
-                        value={costInputs[v.id] ?? ''}
+                        placeholder={v.cost != null ? String(v.cost) : '0.00'}
+                        value={costInputs[v.id] ?? (v.cost != null ? String(v.cost) : '')}
                         onChange={e => setCostInputs(prev => ({ ...prev, [v.id]: e.target.value }))}
                         onClick={e => e.stopPropagation()}
                         className="w-28 pl-10 pr-2 py-1.5 bg-obsidian-800 border border-neutral-700 rounded-lg text-xs text-white text-right focus:outline-none focus:ring-1 focus:ring-gold-500"
@@ -417,13 +420,40 @@ function POItemRow({
 
 export default function NewPurchaseOrderPage() {
   const navigate        = useNavigate()
+  const { id }          = useParams()
+  const isEdit          = !!id
   const createMutation  = useCreatePurchaseOrder()
+  const updateMutation  = useUpdatePurchaseOrder()
+  const { data: existing } = usePurchaseOrder(isEdit ? id : undefined)
 
   const [supplier,       setSupplier]       = useState<SupplierListItem | null>(null)
   const [deliveryDate,   setDeliveryDate]   = useState('')
   const [currency,       setCurrency]       = useState('ARS')
   const [notes,          setNotes]          = useState('')
   const [items,          setItems]          = useState<POItem[]>([])
+
+  // Prefill en modo edición (solo una vez, cuando llega el detalle)
+  const prefilled = useRef(false)
+  useEffect(() => {
+    if (!isEdit || !existing || prefilled.current) return
+    prefilled.current = true
+    setSupplier({ id: existing.supplierId, companyName: existing.supplierName ?? 'Proveedor' } as SupplierListItem)
+    setCurrency(existing.currency || 'ARS')
+    setDeliveryDate(existing.expectedDeliveryDate ? existing.expectedDeliveryDate.slice(0, 10) : '')
+    setNotes(existing.notes ?? '')
+    setItems(existing.items.map(it => ({
+      key:         `${it.productId}-${it.variantId}`,
+      productId:   it.productId,
+      variantId:   it.variantId,
+      productName: it.productName ?? 'Producto',
+      variantSku:  it.variantSku ?? '',
+      attributes:  {},
+      quantity:    it.quantity,
+      unitCost:    it.unitCost,
+    })))
+  }, [isEdit, existing])
+
+  const isDraft = !isEdit || existing?.status === 'Draft'
 
   // ── Item management ───────────────────────────────────────────────────────
 
@@ -487,16 +517,22 @@ export default function NewPurchaseOrderPage() {
       items:                requestItems,
     }
 
-    createMutation.mutate(req, {
-      onSuccess: () => {
-        toast.success('Orden de compra creada correctamente.')
-        navigate('/admin/purchases')
-      },
-      onError: (err: any) => {
-        const msg = err?.response?.data?.detail || err?.message || 'Error al crear la orden de compra.'
-        toast.error(msg)
-      },
-    })
+    const onError = (err: any) => {
+      const msg = err?.response?.data?.errors?.message || err?.response?.data?.detail || err?.message || 'Error al guardar la orden de compra.'
+      toast.error(msg)
+    }
+
+    if (isEdit) {
+      updateMutation.mutate({ id: id!, data: req }, {
+        onSuccess: () => { toast.success('Orden de compra actualizada.'); navigate('/admin/purchases') },
+        onError,
+      })
+    } else {
+      createMutation.mutate(req, {
+        onSuccess: () => { toast.success('Orden de compra creada correctamente.'); navigate('/admin/purchases') },
+        onError,
+      })
+    }
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -514,11 +550,19 @@ export default function NewPurchaseOrderPage() {
         <div>
           <h1 className="text-2xl font-semibold text-white flex items-center gap-2">
             <ShoppingBag className="h-5 w-5 text-gold-400" />
-            Nueva orden de compra
+            {isEdit ? 'Editar orden de compra' : 'Nueva orden de compra'}
           </h1>
-          <p className="text-sm text-neutral-500 mt-0.5">Registra una compra a un proveedor</p>
+          <p className="text-sm text-neutral-500 mt-0.5">
+            {isEdit ? `${existing?.purchaseNumber ?? ''} — modificá ítems y datos` : 'Registra una compra a un proveedor'}
+          </p>
         </div>
       </div>
+
+      {isEdit && !isDraft && (
+        <div className="mb-4 rounded-xl border border-yellow-500/30 bg-yellow-500/5 px-4 py-3 text-sm text-yellow-300">
+          Esta orden ya no está en Borrador, así que no se puede editar. Solo se pueden modificar órdenes en estado Borrador.
+        </div>
+      )}
 
       {/* Layout */}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6">
@@ -702,13 +746,13 @@ export default function NewPurchaseOrderPage() {
           {/* Submit button */}
           <Button
             onClick={handleSubmit}
-            isLoading={createMutation.isPending}
-            disabled={!supplier || items.length === 0}
+            isLoading={createMutation.isPending || updateMutation.isPending}
+            disabled={!supplier || items.length === 0 || (isEdit && !isDraft)}
             size="lg"
             className="w-full"
             leftIcon={<ShoppingBag className="h-4 w-4" />}
           >
-            Crear orden de compra
+            {isEdit ? 'Guardar cambios' : 'Crear orden de compra'}
           </Button>
 
           {(!supplier || items.length === 0) && (
