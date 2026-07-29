@@ -113,9 +113,10 @@ export default function CheckoutPage() {
         notes: form.notes.trim() || undefined,
       })
       clearCart()
-      // Abrir WhatsApp inmediatamente (mismo gesto del usuario → no lo bloquea el navegador)
-      window.open(waUrl, '_blank')
       setDone({ waUrl })
+      // Ir directo a WhatsApp en la MISMA pestaña: el redirect no lo bloquea el
+      // navegador (a diferencia de window.open, que como popup sí se bloquea).
+      window.location.href = waUrl
     } catch (err: unknown) {
       const e = err as { response?: { data?: { errors?: { message?: string } } } }
       toast.error(e?.response?.data?.errors?.message ?? 'No pudimos crear tu pedido. Intentá de nuevo.')
