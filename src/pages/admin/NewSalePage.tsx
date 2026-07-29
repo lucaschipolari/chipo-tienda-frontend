@@ -474,13 +474,20 @@ export default function NewSalePage() {
       return
     }
 
-    const items: CreateSaleItemRequest[] = cart.map(i => ({
-      productId: i.productId,
-      variantId: i.variantId,
-      quantity:  i.quantity,
-      unitPrice: i.unitPrice,
-      discount:  i.unitPrice * i.quantity * (i.discount / 100),
-    }))
+    // El descuento por ítem MÁS el descuento global (distribuido proporcionalmente).
+    // Antes el descuento global se mostraba en pantalla pero no se enviaba → se perdía.
+    const items: CreateSaleItemRequest[] = cart.map(i => {
+      const gross = i.unitPrice * i.quantity
+      const afterItem = gross * (1 - i.discount / 100)
+      const disc = gross - afterItem * (1 - globalDisc / 100) // = dto por ítem + parte del global
+      return {
+        productId: i.productId,
+        variantId: i.variantId,
+        quantity:  i.quantity,
+        unitPrice: i.unitPrice,
+        discount:  Math.round(disc * 100) / 100,
+      }
+    })
 
     const req: CreateSaleRequest = {
       customerId:    customer?.id,
