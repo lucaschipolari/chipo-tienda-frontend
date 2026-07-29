@@ -117,6 +117,24 @@ function SaleDetail({ saleId }: { saleId: string }) {
         </div>
       </div>
 
+      {/* Subtotal y descuento (si hubo) */}
+      {sale.discountAmount > 0 && (
+        <div className="bg-obsidian-900 rounded-xl p-4 flex flex-col gap-1.5">
+          <div className="flex justify-between text-sm">
+            <span className="text-neutral-500">Subtotal (sin descuento)</span>
+            <span className="text-neutral-300">{sale.currency} {formatMoney(sale.subtotal)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-neutral-500">Descuento aplicado</span>
+            <span className="text-red-400">− {sale.currency} {formatMoney(sale.discountAmount)}</span>
+          </div>
+          <div className="flex justify-between text-sm border-t border-neutral-800 pt-1.5 mt-0.5">
+            <span className="text-white font-medium">Total cobrado</span>
+            <span className="text-gold-400 font-semibold">{sale.currency} {formatMoney(sale.total)}</span>
+          </div>
+        </div>
+      )}
+
       {/* Costo y ganancia */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-obsidian-900 rounded-xl p-4">
