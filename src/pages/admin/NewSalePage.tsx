@@ -16,7 +16,7 @@ import { toast } from 'sonner'
 import {
   ArrowLeft, ShoppingCart, Search, Plus, Minus, Trash2,
   User, X, CreditCard, Banknote, Smartphone, QrCode,
-  Tag, Package, ChevronDown, ChevronUp,
+  Tag, Package, ChevronDown, ChevronUp, Boxes,
 } from 'lucide-react'
 import { Button }  from '@/components/ui/Button/Button'
 import { Input }   from '@/components/ui/Input/Input'
@@ -26,6 +26,7 @@ import { useCustomers } from '@/features/customers/hooks/useCustomers'
 import { useProducts, useProduct } from '@/features/products/hooks/useProducts'
 import { useCategories, flattenCategories } from '@/features/categories/hooks/useCategories'
 import { useCreateSale } from '@/features/sales/hooks/useSales'
+import { useActiveCombos } from '@/features/combos/hooks/useCombos'
 import type { CustomerListItem }    from '@/types/customer.types'
 import type { ProductListItem, ProductVariant } from '@/types/catalog.types'
 import type { CreateSaleRequest, CreateSaleItemRequest, PaymentMethod, SaleChannel } from '@/types/sale.types'
@@ -407,6 +408,7 @@ function PackagingQuickAdd({ onAdd }: { onAdd: (item: CartItem) => void }) {
 export default function NewSalePage() {
   const navigate      = useNavigate()
   const createMutation = useCreateSale()
+  const { data: activeCombos } = useActiveCombos()
 
   const [customer,    setCustomer]    = useState<CustomerListItem | null>(null)
   const [buyerName,   setBuyerName]   = useState('')
@@ -433,6 +435,31 @@ export default function NewSalePage() {
       return [...prev, item]
     })
     toast.success(`${item.productName} agregado al carrito.`, { duration: 1500 })
+  }
+
+  // Carga un combo: agrega sus productos con el descuento repartido para llegar
+  // al precio del combo. Reutiliza el descuento por ítem que ya maneja la venta.
+  function addComboToSale(combo: import('@/types/combo.types').Combo) {
+    const original = combo.items.reduce((s, i) => s + i.unitPrice * i.quantity, 0)
+    let allocated = 0
+    combo.items.forEach((it, idx) => {
+      const normalLine = it.unitPrice * it.quantity
+      let prorated = Math.round(combo.price * (original > 0 ? normalLine / original : 1 / combo.items.length))
+      if (idx === combo.items.length - 1) prorated = combo.price - allocated
+      allocated += prorated
+      const discPct = normalLine > 0 ? Math.max(0, Math.min(100, (1 - prorated / normalLine) * 100)) : 0
+      const key = `${it.productId}-${it.variantId}`
+      setCart(prev => {
+        const ex = prev.find(i => i.key === key)
+        if (ex) return prev.map(i => i.key === key ? { ...i, quantity: i.quantity + it.quantity, discount: discPct } : i)
+        return [...prev, {
+          key, productId: it.productId, variantId: it.variantId, productName: it.productName,
+          sku: '', attributes: { Tamaño: it.variantLabel }, unitPrice: it.unitPrice,
+          quantity: it.quantity, discount: discPct, stockAvailable: 9999,
+        }]
+      })
+    })
+    toast.success(`Combo "${combo.name}" agregado a la venta.`, { duration: 2000 })
   }
 
   function removeFromCart(key: string) {
@@ -572,6 +599,21 @@ export default function NewSalePage() {
             </h2>
             <ProductSearch onAdd={addToCart} currency={currency} />
             <PackagingQuickAdd onAdd={addToCart} />
+            {activeCombos && activeCombos.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-neutral-800">
+                <label className="text-xs text-neutral-500 flex items-center gap-1 mb-1.5"><Boxes className="h-3.5 w-3.5" />Cargar un combo</label>
+                <select
+                  value=""
+                  onChange={e => { const c = activeCombos.find(x => x.id === e.target.value); if (c) addComboToSale(c) }}
+                  className="w-full bg-obsidian-900 border border-neutral-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-gold-500"
+                >
+                  <option value="">Elegí un combo para agregarlo…</option>
+                  {activeCombos.map(c => (
+                    <option key={c.id} value={c.id}>{c.name} — {currency} {formatMoney(c.price)}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </section>
 
           {/* Carrito */}
