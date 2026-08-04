@@ -15,9 +15,13 @@ export interface CartItem {
   quantity: number
   /** Stock disponible al momento de agregar — tope para los controles de cantidad */
   maxStock?: number
+  /** Tipo de línea: producto suelto o combo */
+  kind?: 'product' | 'combo'
   /** Si el ítem proviene de un combo (para agruparlo/mostrarlo) */
   comboId?: string
   comboName?: string
+  /** Componentes del combo (para expandir en el checkout) */
+  comboItems?: { productId: string; variantId: string; quantity: number; unitPrice: number }[]
 }
 
 export interface CartTotals {

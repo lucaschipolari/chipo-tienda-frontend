@@ -20,26 +20,32 @@ export function ComboSection() {
   if (!combos || combos.length === 0) return null
 
   function addCombo(combo: Combo) {
+    // El combo entra como UNA sola línea. Guardamos sus componentes con el
+    // precio repartido para expandirlos en el checkout (y descontar stock real).
     const original = combo.items.reduce((s, i) => s + i.unitPrice * i.quantity, 0)
     let allocated = 0
-    combo.items.forEach((it, idx) => {
+    const comboItems = combo.items.map((it, idx) => {
       const share = original > 0 ? (it.unitPrice * it.quantity) / original : 1 / combo.items.length
       let lineTotal = Math.round(combo.price * share)
-      if (idx === combo.items.length - 1) lineTotal = combo.price - allocated // resto exacto
+      if (idx === combo.items.length - 1) lineTotal = combo.price - allocated
       allocated += lineTotal
       const unit = Math.round((lineTotal / it.quantity) * 100) / 100
-      addItem({
-        productId: it.productId,
-        variantId: it.variantId,
-        productName: it.productName,
-        variantName: `${it.variantLabel} · ${combo.name}`,
-        imageUrl: it.imageUrl ?? undefined,
-        unitPrice: unit,
-        currency: combo.currency,
-        quantity: it.quantity,
-        comboId: combo.id,
-        comboName: combo.name,
-      })
+      return { productId: it.productId, variantId: it.variantId, quantity: it.quantity, unitPrice: unit }
+    })
+    const resumen = combo.items.map(i => `${i.quantity}× ${i.productName} (${i.variantLabel})`).join(', ')
+    addItem({
+      productId: combo.id,
+      variantId: `combo:${combo.id}`,      // id sintético: no se mezcla con productos sueltos
+      productName: combo.name,
+      variantName: resumen,
+      imageUrl: combo.imageUrl ?? undefined,
+      unitPrice: combo.price,
+      currency: combo.currency,
+      quantity: 1,
+      kind: 'combo',
+      comboId: combo.id,
+      comboName: combo.name,
+      comboItems,
     })
     setAdded(combo.id)
     toast.success(`${combo.name} agregado al carrito`, { duration: 1800 })

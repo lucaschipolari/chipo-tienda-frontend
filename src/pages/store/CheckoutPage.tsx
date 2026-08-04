@@ -99,8 +99,13 @@ export default function CheckoutPage() {
         buyerName: form.name.trim(),
         buyerEmail,
         buyerPhone: form.phone.trim() || undefined,
-        // Enviamos el precio del carrito como override (respeta precios de combo con descuento).
-        items: items.map(i => ({ productId: i.productId, variantId: i.variantId, quantity: i.quantity, unitPriceOverride: i.unitPrice })),
+        // Expandimos los combos en sus productos (con precio prorrateado) y
+        // enviamos el precio del carrito como override para respetar descuentos.
+        items: items.flatMap(i =>
+          i.kind === 'combo' && i.comboItems
+            ? i.comboItems.map(ci => ({ productId: ci.productId, variantId: ci.variantId, quantity: ci.quantity * i.quantity, unitPriceOverride: ci.unitPrice }))
+            : [{ productId: i.productId, variantId: i.variantId, quantity: i.quantity, unitPriceOverride: i.unitPrice }],
+        ),
         shippingAddress: {
           street: form.delivery === 'Pickup' ? 'Retiro en tienda' : form.street.trim(),
           city: form.city.trim() || '—',

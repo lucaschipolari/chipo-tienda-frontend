@@ -46,10 +46,13 @@ function CartItemRow({
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-white leading-tight truncate">
-          {item.productName}
+        <p className="text-sm font-medium text-white leading-tight truncate flex items-center gap-1.5">
+          {item.variantId.startsWith('combo:') && (
+            <span className="shrink-0 rounded bg-gold-500/15 text-gold-400 text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5">Combo</span>
+          )}
+          <span className="truncate">{item.productName}</span>
         </p>
-        <p className="text-xs text-neutral-500 mt-0.5 truncate">{item.variantName}</p>
+        <p className="text-xs text-neutral-500 mt-0.5 line-clamp-2">{item.variantName}</p>
 
         {/* Precio + controles */}
         <div className="flex items-center justify-between mt-2">
