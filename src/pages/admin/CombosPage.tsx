@@ -137,7 +137,7 @@ function ComboForm({ initial, onClose }: { initial?: Combo; onClose: () => void 
         <div className="space-y-3">
           <input value={name} onChange={e => setName(e.target.value)} placeholder="Nombre del combo (ej: Combo 3 Decants Verano)" className={inputCls} />
           <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Descripción (opcional)" rows={2} className={inputCls + ' resize-none'} />
-          <input value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="URL de imagen (opcional)" className={inputCls} />
+          <input value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="Link de imagen — pegá el de compartir de Google Drive (se convierte solo)" className={inputCls} />
 
           <div>
             <p className="text-xs text-neutral-500 mb-1.5">Productos del combo</p>
