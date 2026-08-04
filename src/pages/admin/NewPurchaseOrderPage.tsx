@@ -746,7 +746,7 @@ export default function NewPurchaseOrderPage() {
           {/* Submit button */}
           <Button
             onClick={handleSubmit}
-            isLoading={createMutation.isPending || updateMutation.isPending}
+            loading={createMutation.isPending || updateMutation.isPending}
             disabled={!supplier || items.length === 0 || (isEdit && !isDraft)}
             size="lg"
             className="w-full"

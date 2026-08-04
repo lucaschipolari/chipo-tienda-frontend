@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Package, Tag, Warehouse, ArrowLeftRight,
   ShoppingCart, Truck, Users, DollarSign, BarChart2,
   Percent, Ticket, Settings, ChevronLeft, Menu, CreditCard,
-  ClipboardList, Building2, UserCheck, Activity,
+  ClipboardList, Building2, UserCheck, Activity, Boxes,
 } from 'lucide-react'
 import { cn } from '@/utils/helpers/cn'
 import { useUiStore } from '@/store/uiStore'
@@ -41,6 +41,7 @@ const NAV_GROUPS: NavGroup[] = [
     permission: 'canManageProducts',
     items: [
       { label: 'Productos',   href: '/admin/products',            icon: Package },
+      { label: 'Combos',      href: '/admin/combos',              icon: Boxes },
       { label: 'Categorías',  href: '/admin/categories',          icon: Tag },
     ],
   },

@@ -314,7 +314,7 @@ export default function NewCustomerPage() {
           </Link>
           <Button
             type="submit"
-            isLoading={createMutation.isPending}
+            loading={createMutation.isPending}
             leftIcon={<Save className="h-4 w-4" />}
           >
             Guardar cliente

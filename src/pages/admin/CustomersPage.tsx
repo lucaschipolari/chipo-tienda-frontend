@@ -176,7 +176,7 @@ function EditCustomerForm({
       </div>
       <div className="flex justify-end gap-2 pt-1">
         <Button variant="ghost" type="button" onClick={onClose}>Cancelar</Button>
-        <Button type="submit" isLoading={updateMutation.isPending}>Guardar cambios</Button>
+        <Button type="submit" loading={updateMutation.isPending}>Guardar cambios</Button>
       </div>
     </form>
   )

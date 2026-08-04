@@ -15,6 +15,9 @@ export interface CartItem {
   quantity: number
   /** Stock disponible al momento de agregar — tope para los controles de cantidad */
   maxStock?: number
+  /** Si el ítem proviene de un combo (para agruparlo/mostrarlo) */
+  comboId?: string
+  comboName?: string
 }
 
 export interface CartTotals {

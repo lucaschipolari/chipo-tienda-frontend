@@ -360,7 +360,7 @@ export default function NewSupplierPage() {
           </Link>
           <Button
             type="submit"
-            isLoading={isPending}
+            loading={isPending}
             leftIcon={<Save className="h-4 w-4" />}
           >
             {isEdit ? 'Guardar cambios' : 'Guardar proveedor'}

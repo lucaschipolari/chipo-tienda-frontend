@@ -81,7 +81,7 @@ function SaleEditForm({ sale, onDone }: { sale: any; onDone: () => void }) {
       </div>
       <div className="flex gap-2 justify-end">
         <button onClick={onDone} className="px-4 py-2 rounded-xl border border-neutral-700 text-sm text-neutral-300 hover:text-white">Cancelar</button>
-        <Button onClick={save} isLoading={isPending}>Guardar cambios</Button>
+        <Button onClick={save} loading={isPending}>Guardar cambios</Button>
       </div>
       <p className="text-[11px] text-neutral-600">Nota: se editan fecha, pago, cliente y notas. Los productos y montos no se modifican (para eso, borrá y volvé a crear la venta).</p>
     </div>

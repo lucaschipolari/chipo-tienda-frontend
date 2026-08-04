@@ -99,7 +99,8 @@ export default function CheckoutPage() {
         buyerName: form.name.trim(),
         buyerEmail,
         buyerPhone: form.phone.trim() || undefined,
-        items: items.map(i => ({ productId: i.productId, variantId: i.variantId, quantity: i.quantity })),
+        // Enviamos el precio del carrito como override (respeta precios de combo con descuento).
+        items: items.map(i => ({ productId: i.productId, variantId: i.variantId, quantity: i.quantity, unitPriceOverride: i.unitPrice })),
         shippingAddress: {
           street: form.delivery === 'Pickup' ? 'Retiro en tienda' : form.street.trim(),
           city: form.city.trim() || '—',

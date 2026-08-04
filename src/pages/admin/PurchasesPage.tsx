@@ -198,7 +198,7 @@ function ReceiveModal({
             </Button>
             <Button
               onClick={handleSubmit}
-              isLoading={receiveMutation.isPending}
+              loading={receiveMutation.isPending}
               className="flex-1"
               leftIcon={<ClipboardCheck className="h-4 w-4" />}
             >
@@ -387,7 +387,7 @@ function PurchaseDetail({
             <Button
               size="sm"
               onClick={handleSend}
-              isLoading={sendMutation.isPending}
+              loading={sendMutation.isPending}
               leftIcon={<Send className="h-3.5 w-3.5" />}
             >
               Enviar al proveedor
@@ -397,7 +397,7 @@ function PurchaseDetail({
             <Button
               size="sm"
               onClick={handleApprove}
-              isLoading={approveMutation.isPending}
+              loading={approveMutation.isPending}
               leftIcon={<ThumbsUp className="h-3.5 w-3.5" />}
             >
               Aprobar
@@ -417,7 +417,7 @@ function PurchaseDetail({
               size="sm"
               variant="outline"
               onClick={handleCancel}
-              isLoading={cancelMutation.isPending}
+              loading={cancelMutation.isPending}
               leftIcon={<X className="h-3.5 w-3.5" />}
               className="text-red-400 border-red-500/30 hover:bg-red-500/10"
             >

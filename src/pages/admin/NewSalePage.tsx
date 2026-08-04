@@ -768,7 +768,7 @@ export default function NewSalePage() {
           {/* Botón confirmar */}
           <Button
             onClick={handleSubmit}
-            isLoading={createMutation.isPending}
+            loading={createMutation.isPending}
             disabled={cart.length === 0}
             size="lg"
             className="w-full"

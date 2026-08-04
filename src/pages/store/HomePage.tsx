@@ -6,6 +6,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { cn } from '@/utils/helpers/cn'
 import { ProductCard } from '@/components/store/ProductCard'
 import { Reveal } from '@/components/store/Reveal'
+import { ComboSection } from '@/components/store/ComboSection'
 import { track } from '@/features/analytics/analyticsService'
 
 // ─── Sección de confianza / originalidad ───────────────────────────────────────
@@ -182,6 +183,9 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* ── Combos ── */}
+      {!search && !categoryId && <ComboSection />}
 
       {/* ── Catálogo comprable ── */}
       <section className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6">
