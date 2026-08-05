@@ -7,7 +7,8 @@ import { cn } from '@/utils/helpers/cn'
 import { ProductCard } from '@/components/store/ProductCard'
 import { Reveal } from '@/components/store/Reveal'
 import { ComboSection } from '@/components/store/ComboSection'
-import { track } from '@/features/analytics/analyticsService'
+import { track, analyticsService } from '@/features/analytics/analyticsService'
+import { useQuery } from '@tanstack/react-query'
 
 // ─── Sección de confianza / originalidad ───────────────────────────────────────
 
@@ -109,13 +110,22 @@ export default function HomePage() {
     track('search', { searchTerm: term, resultCount: data.totalCount ?? data.items.length ?? 0 })
   }, [debounced, data, isLoading])
 
+  // Ranking de más vistos (para ordenar "Destacados")
+  const { data: popular } = useQuery({
+    queryKey: ['popular-products'],
+    queryFn: () => analyticsService.getPopular(30),
+    staleTime: 5 * 60 * 1000,
+  })
+  const popMap = useMemo(() => new Map((popular ?? []).map(p => [p.productId, p.views])), [popular])
+
   const products = useMemo(() => {
     const arr = [...(data?.items ?? [])]
     if (sortBy === 'name')       arr.sort((a, b) => a.name.localeCompare(b.name, 'es'))
     else if (sortBy === 'price_asc')  arr.sort((a, b) => a.basePrice - b.basePrice)
     else if (sortBy === 'price_desc') arr.sort((a, b) => b.basePrice - a.basePrice)
+    else /* relevant */ arr.sort((a, b) => (popMap.get(b.id) ?? 0) - (popMap.get(a.id) ?? 0))
     return arr
-  }, [data, sortBy])
+  }, [data, sortBy, popMap])
 
   return (
     <div className="min-h-screen">
@@ -175,7 +185,7 @@ export default function HomePage() {
               onChange={e => setSortBy(e.target.value)}
               className="rounded-full bg-white/[0.06] px-3 py-1.5 text-xs text-white ring-1 ring-white/15 focus:outline-none focus:ring-white/35 [&>option]:bg-neutral-900"
             >
-              <option value="relevant">Destacados</option>
+              <option value="relevant">Más vistos</option>
               <option value="name">Nombre (A-Z)</option>
               <option value="price_asc">Precio: menor a mayor</option>
               <option value="price_desc">Precio: mayor a menor</option>

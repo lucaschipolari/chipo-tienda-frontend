@@ -71,7 +71,11 @@ export interface AnalyticsDashboard {
   noResultSearches: SearchStat[]
 }
 
+export interface PopularProduct { productId: string; views: number }
+
 export const analyticsService = {
   getDashboard: (from?: string, to?: string): Promise<AnalyticsDashboard> =>
     httpClient.get<AnalyticsDashboard>(`${BASE}/dashboard`, { from, to } as Record<string, unknown>),
+  getPopular: (days = 30): Promise<PopularProduct[]> =>
+    httpClient.get<PopularProduct[]>(`${BASE}/popular`, { days } as Record<string, unknown>),
 }

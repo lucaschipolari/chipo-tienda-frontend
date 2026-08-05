@@ -60,7 +60,7 @@ export function ComboSection() {
         <span className="rounded-full bg-white/[0.06] px-2.5 py-0.5 text-[11px] text-neutral-400 ring-1 ring-white/10">Precio especial</span>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
         {combos.map(c => {
           const ahorro = c.originalTotal - c.price
           return (
@@ -77,22 +77,23 @@ export function ComboSection() {
                   </span>
                 )}
               </div>
-              <div className="flex flex-1 flex-col gap-2 p-4">
-                <h3 className="font-display text-base font-medium text-white">{c.name}</h3>
-                {c.description && <p className="line-clamp-2 text-xs text-neutral-500">{c.description}</p>}
-                <ul className="flex flex-col gap-0.5 text-xs text-neutral-400">
-                  {c.items.map(i => (
-                    <li key={i.variantId}>• {i.quantity}× {i.productName} <span className="text-neutral-600">({i.variantLabel})</span></li>
+              <div className="flex flex-1 flex-col gap-1.5 p-3 sm:p-4">
+                <h3 className="font-display text-sm font-medium leading-snug text-white sm:text-base">{c.name}</h3>
+                {c.description && <p className="line-clamp-1 text-xs text-neutral-500 sm:line-clamp-2">{c.description}</p>}
+                <ul className="flex flex-col gap-0.5 text-[11px] text-neutral-400 sm:text-xs">
+                  {c.items.slice(0, 4).map(i => (
+                    <li key={i.variantId} className="truncate">• {i.quantity}× {i.productName} <span className="text-neutral-600">({i.variantLabel})</span></li>
                   ))}
+                  {c.items.length > 4 && <li className="text-neutral-600">+{c.items.length - 4} más…</li>}
                 </ul>
-                <div className="mt-auto flex items-end justify-between pt-3">
-                  <div>
-                    <span className="text-lg font-semibold text-white">${formatMoney(c.price)}</span>
-                    {ahorro > 0 && <span className="ml-2 text-xs text-neutral-600 line-through">${formatMoney(c.originalTotal)}</span>}
+                <div className="mt-auto flex flex-col gap-2 pt-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="leading-tight">
+                    <span className="text-base font-semibold text-white sm:text-lg">${formatMoney(c.price)}</span>
+                    {ahorro > 0 && <span className="ml-2 text-[11px] text-neutral-600 line-through">${formatMoney(c.originalTotal)}</span>}
                   </div>
                   <button
                     onClick={() => addCombo(c)}
-                    className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-black transition-colors hover:bg-neutral-200"
+                    className="inline-flex w-full items-center justify-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-black transition-colors hover:bg-neutral-200 sm:w-auto"
                   >
                     {added === c.id ? <><Check className="h-3.5 w-3.5" /> Listo</> : <><Plus className="h-3.5 w-3.5" /> Agregar</>}
                   </button>
