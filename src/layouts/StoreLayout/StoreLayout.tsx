@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import { StoreHeader } from './StoreHeader'
+import { Marquee } from '@/components/store/Marquee'
 import { StoreFooter } from './StoreFooter'
 import { CartDrawer } from '@/features/cart/CartDrawer'
 import { FloatingCartBar } from '@/features/cart/FloatingCartBar'
@@ -14,6 +15,7 @@ export function StoreLayout() {
   return (
     <div className="flex flex-col min-h-screen bg-black text-white">
       <StoreHeader />
+      <Marquee />
       <main className="flex-1">
         <Outlet />
       </main>
