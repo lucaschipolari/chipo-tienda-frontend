@@ -22,9 +22,6 @@ export function Marquee() {
           animation: chipo-marquee 28s linear infinite;
         }
         .chipo-marquee-wrap:hover .chipo-marquee-track { animation-play-state: paused; }
-        @media (prefers-reduced-motion: reduce) {
-          .chipo-marquee-track { animation: none; transform: none; }
-        }
       `}</style>
       <div className="chipo-marquee-wrap py-2">
         <div className="chipo-marquee-track">
