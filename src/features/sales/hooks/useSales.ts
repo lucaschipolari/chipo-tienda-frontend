@@ -50,6 +50,18 @@ export function useUpdateSale() {
   })
 }
 
+export function useDeleteSale() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => salesService.remove(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: saleKeys.lists() })
+      qc.invalidateQueries({ queryKey: ['inventory'] })
+      qc.invalidateQueries({ queryKey: ['products'] })
+    },
+  })
+}
+
 export function useSalesReport(from: string, to: string) {
   return useQuery({
     queryKey: saleKeys.report(from, to),

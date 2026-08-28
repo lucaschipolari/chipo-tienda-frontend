@@ -24,6 +24,9 @@ export const salesService = {
   update: (id: string, data: UpdateSaleRequest) =>
     httpClient.put<void>(`${BASE}/${id}`, { ...data, id }),
 
+  remove: (id: string) =>
+    httpClient.delete<void>(`${BASE}/${id}`),
+
   getReport: (from: string, to: string) =>
     httpClient.get<SalesReport>(`${BASE}/report`, { from, to }),
 }

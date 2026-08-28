@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ShoppingCart, Plus, Eye, BarChart2, Store,
-  Phone, MessageCircle, CreditCard, Banknote, Wifi, Pencil,
+  Phone, MessageCircle, CreditCard, Banknote, Wifi, Pencil, Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button }     from '@/components/ui/Button/Button'
@@ -11,7 +11,7 @@ import { Badge }      from '@/components/ui/Badge/Badge'
 import { StatCard }   from '@/components/data-display/StatCard/StatCard'
 import { Pagination } from '@/components/data-display/Pagination/Pagination'
 import { cn }         from '@/utils/helpers/cn'
-import { useSales, useSale, useUpdateSale } from '@/features/sales/hooks/useSales'
+import { useSales, useSale, useUpdateSale, useDeleteSale } from '@/features/sales/hooks/useSales'
 import type { SaleListItem, SaleChannel } from '@/types/sale.types'
 import { formatMoney } from '@/utils/helpers/formatMoney'
 
@@ -88,22 +88,38 @@ function SaleEditForm({ sale, onDone }: { sale: any; onDone: () => void }) {
   )
 }
 
-function SaleDetail({ saleId }: { saleId: string }) {
+function SaleDetail({ saleId, onClose }: { saleId: string; onClose: () => void }) {
   const { data: sale, isLoading } = useSale(saleId)
   const [editing, setEditing] = useState(false)
+  const del = useDeleteSale()
   if (isLoading) return <div className="py-8 text-center text-neutral-500">Cargando...</div>
   if (!sale) return null
 
   if (editing) return <SaleEditForm sale={sale} onDone={() => setEditing(false)} />
 
+  function handleDelete() {
+    if (!confirm(`¿Eliminar la venta ${sale!.saleNumber}? Esta acción no se puede deshacer y devuelve el stock.`)) return
+    del.mutate(sale!.id, {
+      onSuccess: () => { toast.success('Venta eliminada.'); onClose() },
+      onError: (e: any) => toast.error(e?.response?.data?.errors?.message ?? 'No se pudo eliminar la venta.'),
+    })
+  }
+
   return (
     <div className="space-y-5">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
         <button
           onClick={() => setEditing(true)}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neutral-700 text-xs text-neutral-300 hover:text-white hover:border-neutral-500 transition-colors"
         >
           <Pencil className="h-3.5 w-3.5" /> Editar
+        </button>
+        <button
+          onClick={handleDelete}
+          disabled={del.isPending}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/30 text-xs text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+        >
+          <Trash2 className="h-3.5 w-3.5" /> {del.isPending ? 'Eliminando…' : 'Eliminar'}
         </button>
       </div>
       <div className="grid grid-cols-2 gap-4">
@@ -289,7 +305,7 @@ export default function SalesPage() {
       )}
 
       <Modal isOpen={!!detailId} onClose={() => setDetailId(null)} title="Detalle de venta">
-        {detailId && <SaleDetail saleId={detailId} />}
+        {detailId && <SaleDetail saleId={detailId} onClose={() => setDetailId(null)} />}
       </Modal>
     </div>
   )
