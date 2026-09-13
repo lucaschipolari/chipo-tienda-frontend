@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   ShoppingCart, Plus, Eye, BarChart2, Store,
   Phone, MessageCircle, CreditCard, Banknote, Wifi, Pencil, Trash2,
+  Search, X, Package, SlidersHorizontal,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button }     from '@/components/ui/Button/Button'
@@ -11,6 +12,8 @@ import { Badge }      from '@/components/ui/Badge/Badge'
 import { StatCard }   from '@/components/data-display/StatCard/StatCard'
 import { Pagination } from '@/components/data-display/Pagination/Pagination'
 import { cn }         from '@/utils/helpers/cn'
+import { useDebounce } from '@/hooks/useDebounce'
+import { useProducts } from '@/features/products/hooks/useProducts'
 import { useSales, useSale, useUpdateSale, useDeleteSale } from '@/features/sales/hooks/useSales'
 import type { SaleListItem, SaleChannel } from '@/types/sale.types'
 import { formatMoney } from '@/utils/helpers/formatMoney'
@@ -193,17 +196,92 @@ function SaleDetail({ saleId, onClose }: { saleId: string; onClose: () => void }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
+function ProductFilter({ label, onPick, onClear }: {
+  label: string | null
+  onPick: (id: string, label: string) => void
+  onClear: () => void
+}) {
+  const [q, setQ] = useState('')
+  const [open, setOpen] = useState(false)
+  const debounced = useDebounce(q, 300)
+  const { data } = useProducts({ page: 1, pageSize: 8, search: debounced || undefined })
+
+  if (label) {
+    return (
+      <div className="flex items-center gap-2 bg-obsidian-900 border border-gold-500/30 rounded-xl px-3 py-2 text-sm text-white">
+        <Package className="h-3.5 w-3.5 text-gold-400" />
+        <span className="truncate max-w-[160px]">{label}</span>
+        <button onClick={onClear} className="text-neutral-500 hover:text-white"><X className="h-3.5 w-3.5" /></button>
+      </div>
+    )
+  }
+  return (
+    <div className="relative">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
+      <input
+        value={q}
+        onChange={e => { setQ(e.target.value); setOpen(true) }}
+        onFocus={() => setOpen(true)}
+        placeholder="Filtrar por producto…"
+        className="w-full bg-obsidian-900 border border-neutral-800 rounded-xl pl-9 pr-3 py-2 text-sm text-white"
+      />
+      {open && q && data && data.items.length > 0 && (
+        <div className="absolute z-20 mt-1 w-full max-h-52 overflow-y-auto rounded-xl border border-neutral-800 bg-obsidian-950 shadow-xl" style={{ background: 'var(--surface)' }}>
+          {data.items.map(p => (
+            <button key={p.id} onClick={() => { onPick(p.id, p.name); setQ(''); setOpen(false) }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-white hover:bg-obsidian-800">
+              <Package className="h-3.5 w-3.5 text-neutral-500" /> <span className="truncate">{p.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const PAYMENTS = [
+  { v: 'Cash', l: 'Efectivo' }, { v: 'Transfer', l: 'Transferencia' },
+  { v: 'Card', l: 'Tarjeta' }, { v: 'QR', l: 'QR / Billetera' }, { v: 'Mixed', l: 'Mixto' },
+]
+const CHANNELS = [
+  { v: 'InStore', l: 'Tienda física' }, { v: 'WhatsApp', l: 'WhatsApp' },
+  { v: 'Phone', l: 'Teléfono' }, { v: 'Other', l: 'Otro' },
+]
+
 export default function SalesPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
+  const [search, setSearch] = useState('')
+  const [productId, setProductId] = useState('')
+  const [productLabel, setProductLabel] = useState<string | null>(null)
+  const [payment, setPayment] = useState('')
+  const [channel, setChannel] = useState('')
+  const [minTotal, setMinTotal] = useState('')
+  const [maxTotal, setMaxTotal] = useState('')
   const [detailId, setDetailId] = useState<string | null>(null)
+  const debSearch = useDebounce(search, 350)
+  const debMin = useDebounce(minTotal, 400)
+  const debMax = useDebounce(maxTotal, 400)
+
+  function resetPageAnd(fn: () => void) { setPage(1); fn() }
+  function clearFilters() {
+    setPage(1); setFromDate(''); setToDate(''); setSearch(''); setProductId(''); setProductLabel(null)
+    setPayment(''); setChannel(''); setMinTotal(''); setMaxTotal('')
+  }
+  const hasFilters = !!(fromDate || toDate || search || productId || payment || channel || minTotal || maxTotal)
 
   const { data, isLoading } = useSales({
     page, pageSize: 20,
     from: fromDate || undefined,
     to: toDate || undefined,
+    search: debSearch.trim() || undefined,
+    productId: productId || undefined,
+    paymentMethod: payment || undefined,
+    channel: channel || undefined,
+    minTotal: debMin ? Number(debMin) : undefined,
+    maxTotal: debMax ? Number(debMax) : undefined,
   })
 
   const totalRevenue = data?.items.reduce((acc, s) => acc + s.total, 0) ?? 0
@@ -231,11 +309,56 @@ export default function SalesPage() {
         <StatCard label="Ticket promedio" value={`ARS ${data?.totalCount ? (totalRevenue / data.items.length).toFixed(2) : '0.00'}`} icon={<CreditCard className="h-5 w-5" />} />
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-3 flex-wrap">
-        <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} className="bg-obsidian-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-white" />
-        <span className="self-center text-neutral-600">hasta</span>
-        <input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className="bg-obsidian-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-white" />
+      {/* Filtros */}
+      <div className="rounded-2xl border border-neutral-800 p-4 space-y-3" style={{ background: 'var(--surface)' }}>
+        <div className="flex items-center gap-2 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
+          <SlidersHorizontal className="h-3.5 w-3.5" /> Filtros
+          {hasFilters && (
+            <button onClick={clearFilters} className="ml-auto inline-flex items-center gap-1 text-[11px] text-gold-400 hover:text-gold-300 normal-case tracking-normal">
+              <X className="h-3 w-3" /> Limpiar filtros
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {/* Búsqueda */}
+          <div className="relative sm:col-span-2 lg:col-span-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
+            <input value={search} onChange={e => resetPageAnd(() => setSearch(e.target.value))}
+              placeholder="N° de venta, cliente o producto…"
+              className="w-full bg-obsidian-900 border border-neutral-800 rounded-xl pl-9 pr-3 py-2 text-sm text-white" />
+          </div>
+          {/* Producto */}
+          <ProductFilter label={productLabel}
+            onPick={(id, l) => resetPageAnd(() => { setProductId(id); setProductLabel(l) })}
+            onClear={() => resetPageAnd(() => { setProductId(''); setProductLabel(null) })} />
+          {/* Pago */}
+          <select value={payment} onChange={e => resetPageAnd(() => setPayment(e.target.value))}
+            className="bg-obsidian-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-white [&>option]:bg-neutral-900">
+            <option value="">Todos los pagos</option>
+            {PAYMENTS.map(p => <option key={p.v} value={p.v}>{p.l}</option>)}
+          </select>
+          {/* Canal */}
+          <select value={channel} onChange={e => resetPageAnd(() => setChannel(e.target.value))}
+            className="bg-obsidian-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-white [&>option]:bg-neutral-900">
+            <option value="">Todos los canales</option>
+            {CHANNELS.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
+          </select>
+          {/* Montos */}
+          <div className="flex items-center gap-2">
+            <input type="number" value={minTotal} onChange={e => resetPageAnd(() => setMinTotal(e.target.value))} placeholder="Monto mín."
+              className="w-full bg-obsidian-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-white" />
+            <input type="number" value={maxTotal} onChange={e => resetPageAnd(() => setMaxTotal(e.target.value))} placeholder="Monto máx."
+              className="w-full bg-obsidian-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-white" />
+          </div>
+          {/* Fechas */}
+          <div className="flex items-center gap-2">
+            <input type="date" value={fromDate} onChange={e => resetPageAnd(() => setFromDate(e.target.value))}
+              className="w-full bg-obsidian-900 border border-neutral-800 rounded-xl px-2 py-2 text-sm text-white" />
+            <span className="text-neutral-600 text-xs">a</span>
+            <input type="date" value={toDate} onChange={e => resetPageAnd(() => setToDate(e.target.value))}
+              className="w-full bg-obsidian-900 border border-neutral-800 rounded-xl px-2 py-2 text-sm text-white" />
+          </div>
+        </div>
       </div>
 
       {/* Table */}

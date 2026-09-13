@@ -75,6 +75,12 @@ export interface GetSalesParams {
   customerId?: string
   from?: string
   to?: string
+  search?: string
+  productId?: string
+  paymentMethod?: string
+  channel?: string
+  minTotal?: number
+  maxTotal?: number
 }
 
 // Reportes
