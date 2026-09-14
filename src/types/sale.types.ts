@@ -67,6 +67,8 @@ export interface CreateSaleRequest {
   currency: string
   notes?: string
   saleDate?: string
+  referralSource?: string
+  deliveryMethod?: string
 }
 
 export interface GetSalesParams {

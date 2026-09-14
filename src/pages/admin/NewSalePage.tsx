@@ -53,6 +53,11 @@ const CHANNEL_OPTIONS: { value: SaleChannel; label: string }[] = [
   { value: 'Other',    label: 'Otro' },
 ]
 
+const REFERRAL_OPTIONS = [
+  'Instagram', 'WhatsApp', 'Facebook', 'TikTok',
+  'Recomendación', 'Local / Vidriera', 'Feria o evento', 'Google', 'Otro',
+]
+
 // ─── Tipos del carrito ────────────────────────────────────────────────────────
 
 interface CartItem {
@@ -419,6 +424,13 @@ export default function NewSalePage() {
   const [globalDisc,  setGlobalDisc]  = useState(0)   // % descuento global 0..100
   const [notes,       setNotes]       = useState('')
   const [saleDate,    setSaleDate]    = useState('')  // fecha de la venta (vacío = hoy)
+  const [referral,    setReferral]    = useState('')  // de dónde nos conoce
+  const [delivery,    setDelivery]    = useState<'Pickup' | 'Delivery'>('Pickup')
+
+  // Regla: con envío no se puede pagar en efectivo → si estaba en efectivo, lo cambio.
+  useEffect(() => {
+    if (delivery === 'Delivery' && payMethod === 'Cash') setPayMethod('Transfer')
+  }, [delivery, payMethod])
 
   // ── Carrito: agregar / actualizar ─────────────────────────────────────────
 
@@ -500,6 +512,10 @@ export default function NewSalePage() {
       toast.error('El carrito está vacío. Agrega al menos un producto.')
       return
     }
+    if (delivery === 'Delivery' && payMethod === 'Cash') {
+      toast.error('Con envío no se puede pagar en efectivo. Elegí otro medio de pago.')
+      return
+    }
 
     // El descuento por ítem MÁS el descuento global (distribuido proporcionalmente).
     // Antes el descuento global se mostraba en pantalla pero no se enviaba → se perdía.
@@ -524,6 +540,8 @@ export default function NewSalePage() {
       channel,
       currency,
       notes:         notes.trim() || undefined,
+      referralSource: referral || undefined,
+      deliveryMethod: delivery,
       // Fecha elegida (a mediodía UTC para evitar corrimiento de día); vacío = ahora
       saleDate:      saleDate ? `${saleDate}T12:00:00Z` : undefined,
     }
@@ -734,22 +752,57 @@ export default function NewSalePage() {
               Método de pago
             </h2>
             <div className="grid grid-cols-2 gap-2">
-              {PAYMENT_METHODS.map(m => (
-                <button
-                  key={m.value}
-                  onClick={() => setPayMethod(m.value)}
-                  className={cn(
-                    'flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border',
-                    payMethod === m.value
-                      ? 'bg-gold-500/10 text-gold-400 border-gold-500/30'
-                      : 'text-neutral-500 border-neutral-800 hover:text-white hover:border-neutral-700',
-                  )}
-                >
-                  {m.icon}
-                  {m.label}
+              {PAYMENT_METHODS.map(m => {
+                const blocked = delivery === 'Delivery' && m.value === 'Cash'
+                return (
+                  <button
+                    key={m.value}
+                    onClick={() => { if (!blocked) setPayMethod(m.value) }}
+                    disabled={blocked}
+                    title={blocked ? 'Con envío no se puede pagar en efectivo' : undefined}
+                    className={cn(
+                      'flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all border',
+                      blocked
+                        ? 'text-neutral-700 border-neutral-800/60 cursor-not-allowed opacity-50'
+                        : payMethod === m.value
+                          ? 'bg-gold-500/10 text-gold-400 border-gold-500/30'
+                          : 'text-neutral-500 border-neutral-800 hover:text-white hover:border-neutral-700',
+                    )}
+                  >
+                    {m.icon}
+                    {m.label}
+                  </button>
+                )
+              })}
+            </div>
+            {delivery === 'Delivery' && (
+              <p className="mt-2 text-[11px] text-yellow-400/80">Con envío no se acepta efectivo.</p>
+            )}
+          </section>
+
+          {/* Entrega */}
+          <section className="rounded-2xl border border-neutral-800 p-5" style={{ background: 'var(--surface)' }}>
+            <h2 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-3">Entrega</h2>
+            <div className="grid grid-cols-2 gap-2">
+              {([['Pickup','Retiro en persona'],['Delivery','Envío']] as const).map(([v,l]) => (
+                <button key={v} onClick={() => setDelivery(v)}
+                  className={cn('px-3 py-2 rounded-xl text-sm font-medium transition-all border',
+                    delivery === v ? 'bg-gold-500/10 text-gold-400 border-gold-500/30'
+                      : 'text-neutral-500 border-neutral-800 hover:text-white hover:border-neutral-700')}>
+                  {l}
                 </button>
               ))}
             </div>
+          </section>
+
+          {/* De dónde nos conoce */}
+          <section className="rounded-2xl border border-neutral-800 p-5" style={{ background: 'var(--surface)' }}>
+            <h2 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-3">¿De dónde nos conoce el cliente?</h2>
+            <select value={referral} onChange={e => setReferral(e.target.value)}
+              className="w-full bg-obsidian-900 border border-neutral-800 rounded-xl px-3 py-2.5 text-sm text-white [&>option]:bg-neutral-900">
+              <option value="">Sin especificar</option>
+              {REFERRAL_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
           </section>
 
           {/* Totales */}
