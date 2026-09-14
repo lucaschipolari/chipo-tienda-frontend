@@ -33,6 +33,8 @@ export interface Sale {
   currency: string
   paymentMethod: string
   notes?: string
+  referralSource?: string
+  deliveryMethod?: string
   items: SaleItem[]
   createdAt: string
 }

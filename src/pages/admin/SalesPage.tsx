@@ -170,6 +170,8 @@ function SaleDetail({ saleId, onClose }: { saleId: string; onClose: () => void }
         <div><p className="text-xs text-neutral-500">Canal</p><p className="text-sm text-white mt-1">{CHANNEL_CONFIG[sale.channel]?.label ?? sale.channel}</p></div>
         <div><p className="text-xs text-neutral-500">Pago</p><p className="text-sm text-white mt-1">{PAYMENT_CONFIG[sale.paymentMethod]?.label ?? sale.paymentMethod}</p></div>
         {sale.customerName && <div><p className="text-xs text-neutral-500">Cliente</p><p className="text-sm text-white mt-1">{sale.customerName}</p></div>}
+        {sale.deliveryMethod && <div><p className="text-xs text-neutral-500">Entrega</p><p className="text-sm text-white mt-1">{sale.deliveryMethod === 'Delivery' ? 'Envío' : 'Retira en local'}</p></div>}
+        {sale.referralSource && <div><p className="text-xs text-neutral-500">Nos conoció por</p><p className="text-sm text-white mt-1">{sale.referralSource}</p></div>}
         <div><p className="text-xs text-neutral-500">Fecha</p><p className="text-sm text-white mt-1">{new Date(sale.createdAt).toLocaleString('es-AR')}</p></div>
       </div>
 
