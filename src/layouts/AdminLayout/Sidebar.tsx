@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Package, Tag, Warehouse, ArrowLeftRight,
   ShoppingCart, Truck, Users, DollarSign, BarChart2,
   Percent, Ticket, Settings, ChevronLeft, Menu, CreditCard,
-  ClipboardList, Building2, UserCheck, Activity, Boxes,
+  ClipboardList, Building2, UserCheck, Activity, Boxes, TrendingUp,
 } from 'lucide-react'
 import { cn } from '@/utils/helpers/cn'
 import { useUiStore } from '@/store/uiStore'
@@ -76,6 +76,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Gastos',   href: '/admin/expenses', icon: CreditCard },
       { label: 'Finanzas', href: '/admin/finance',  icon: DollarSign },
+      { label: 'Rentabilidad', href: '/admin/profitability', icon: TrendingUp },
       { label: 'Analítica', href: '/admin/analytics', icon: Activity },
       { label: 'Reportes', href: '/admin/reports',  icon: BarChart2 },
     ],
