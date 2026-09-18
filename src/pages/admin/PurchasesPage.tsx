@@ -68,6 +68,15 @@ function StatusBadge({ status }: { status: PurchaseOrderStatus }) {
   )
 }
 
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+      <span className="text-xs text-neutral-500 shrink-0">{label}</span>
+      <span className="text-sm text-white text-right truncate">{value}</span>
+    </div>
+  )
+}
+
 // ─── ReceiveModal ─────────────────────────────────────────────────────────────
 
 function ReceiveModal({
@@ -259,114 +268,138 @@ function PurchaseDetail({
   const canReceive = po.status === 'Approved' || po.status === 'PartiallyReceived'
   const canCancel  = po.status === 'Draft' || po.status === 'Sent'
 
+  const totalOrdered  = po.items.reduce((a, i) => a + i.quantity, 0)
+  const totalReceived = po.items.reduce((a, i) => a + i.quantityReceived, 0)
+  const receivePct = totalOrdered > 0 ? Math.round((totalReceived / totalOrdered) * 100) : 0
+  const fmtDate = (d: string) =>
+    new Date(d).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })
+
   return (
     <div className="space-y-5">
-      {/* Header info */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-obsidian-900 rounded-xl p-3">
-          <p className="text-xs text-neutral-500">Número</p>
-          <p className="font-mono text-white mt-0.5">{po.purchaseNumber}</p>
-        </div>
-        <div className="bg-obsidian-900 rounded-xl p-3">
-          <p className="text-xs text-neutral-500">Estado</p>
-          <div className="mt-1">
-            <StatusBadge status={po.status} />
-          </div>
-        </div>
-        <div className="bg-obsidian-900 rounded-xl p-3">
-          <p className="text-xs text-neutral-500">Proveedor</p>
-          <p className="text-sm text-white mt-0.5">{po.supplierName ?? po.supplierId}</p>
-        </div>
-        <div className="bg-obsidian-900 rounded-xl p-3">
-          <p className="text-xs text-neutral-500">Moneda</p>
-          <p className="text-sm text-white mt-0.5">{po.currency}</p>
-        </div>
-        {po.expectedDeliveryDate && (
-          <div className="bg-obsidian-900 rounded-xl p-3 col-span-2">
-            <p className="text-xs text-neutral-500">Entrega esperada</p>
-            <p className="text-sm text-white mt-0.5">
-              {new Date(po.expectedDeliveryDate).toLocaleDateString('es-AR', {
-                day: '2-digit', month: 'long', year: 'numeric',
-              })}
-            </p>
-          </div>
-        )}
-        {po.notes && (
-          <div className="bg-obsidian-900 rounded-xl p-3 col-span-2">
-            <p className="text-xs text-neutral-500">Notas</p>
-            <p className="text-sm text-white mt-0.5 whitespace-pre-wrap">{po.notes}</p>
-          </div>
-        )}
+      {/* Encabezado */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <span className="font-mono text-lg text-white">{po.purchaseNumber}</span>
+        <StatusBadge status={po.status} />
+        <span className="text-xs text-neutral-500">Creada el {fmtDate(po.createdAt)}</span>
       </div>
 
-      {/* Items table */}
-      <div>
-        <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">
-          Ítems ({po.items.length})
-        </p>
-        <div className="rounded-xl border border-neutral-800 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="border-b border-neutral-800">
-              <tr>
-                <th className="text-left px-3 py-2.5 text-neutral-500 font-medium text-xs">Producto</th>
-                <th className="text-center px-3 py-2.5 text-neutral-500 font-medium text-xs">Pedido</th>
-                <th className="text-center px-3 py-2.5 text-neutral-500 font-medium text-xs">Recibido</th>
-                <th className="text-right px-3 py-2.5 text-neutral-500 font-medium text-xs">Costo u.</th>
-                <th className="text-right px-3 py-2.5 text-neutral-500 font-medium text-xs">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {po.items.map(item => (
-                <tr key={item.id} className="border-t border-neutral-800/50">
-                  <td className="px-3 py-2.5">
-                    <p className="text-white text-xs font-medium truncate max-w-[180px]">
-                      {item.productName ?? item.productId}
-                    </p>
-                    {item.variantSku && (
-                      <p className="text-neutral-600 text-xs">SKU: {item.variantSku}</p>
-                    )}
-                  </td>
-                  <td className="px-3 py-2.5 text-center text-neutral-300 text-xs">{item.quantity}</td>
-                  <td className="px-3 py-2.5 text-center">
-                    <span className={cn(
-                      'text-xs font-medium',
-                      item.isFullyReceived
-                        ? 'text-green-400'
-                        : item.quantityReceived > 0
-                          ? 'text-amber-400'
-                          : 'text-neutral-500',
-                    )}>
-                      {item.quantityReceived}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2.5 text-right text-neutral-300 text-xs">
-                    {item.currency} {formatMoney(item.unitCost)}
-                  </td>
-                  <td className="px-3 py-2.5 text-right text-gold-400 text-xs font-medium">
-                    {item.currency} {formatMoney(item.total)}
-                  </td>
+      {/* Layout responsive: en desktop 2 columnas (ítems | resumen), en móvil apilado */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 items-start">
+        {/* ── Columna ítems ── */}
+        <div className="space-y-2 order-2 lg:order-1">
+          <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">
+            Ítems ({po.items.length})
+          </p>
+
+          {/* Tabla (desktop / tablet) */}
+          <div className="hidden sm:block rounded-xl border border-neutral-800 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="border-b border-neutral-800 bg-obsidian-900/60">
+                <tr>
+                  <th className="text-left px-4 py-2.5 text-neutral-500 font-medium text-xs">Producto</th>
+                  <th className="text-center px-3 py-2.5 text-neutral-500 font-medium text-xs">Pedido</th>
+                  <th className="text-center px-3 py-2.5 text-neutral-500 font-medium text-xs">Recibido</th>
+                  <th className="text-right px-3 py-2.5 text-neutral-500 font-medium text-xs">Costo u.</th>
+                  <th className="text-right px-4 py-2.5 text-neutral-500 font-medium text-xs">Total</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Totals */}
-      <div className="rounded-xl border border-neutral-800 p-4 space-y-2">
-        <div className="flex justify-between text-sm text-neutral-400">
-          <span>Subtotal</span>
-          <span>{po.currency} {formatMoney(po.subtotal)}</span>
-        </div>
-        {po.taxAmount > 0 && (
-          <div className="flex justify-between text-sm text-neutral-400">
-            <span>Impuesto</span>
-            <span>{po.currency} {formatMoney(po.taxAmount)}</span>
+              </thead>
+              <tbody>
+                {po.items.map(item => (
+                  <tr key={item.id} className="border-t border-neutral-800/50 hover:bg-obsidian-800/30">
+                    <td className="px-4 py-3">
+                      <p className="text-white text-sm font-medium">{item.productName ?? item.productId}</p>
+                      {item.variantSku && <p className="text-neutral-600 text-xs mt-0.5">SKU: {item.variantSku}</p>}
+                    </td>
+                    <td className="px-3 py-3 text-center text-neutral-300">{item.quantity}</td>
+                    <td className="px-3 py-3 text-center">
+                      <span className={cn('text-sm font-medium',
+                        item.isFullyReceived ? 'text-green-400' : item.quantityReceived > 0 ? 'text-amber-400' : 'text-neutral-500')}>
+                        {item.quantityReceived}/{item.quantity}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-right text-neutral-300">{item.currency} {formatMoney(item.unitCost)}</td>
+                    <td className="px-4 py-3 text-right text-gold-400 font-medium">{item.currency} {formatMoney(item.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
-        <div className="flex justify-between text-base font-semibold text-white border-t border-neutral-800 pt-2 mt-1">
-          <span>Total</span>
-          <span className="text-gold-400">{po.currency} {formatMoney(po.total)}</span>
+
+          {/* Tarjetas (móvil) */}
+          <div className="sm:hidden space-y-2">
+            {po.items.map(item => (
+              <div key={item.id} className="rounded-xl border border-neutral-800 bg-obsidian-900 p-3">
+                <p className="text-white text-sm font-medium">{item.productName ?? item.productId}</p>
+                {item.variantSku && <p className="text-neutral-600 text-xs mt-0.5">SKU: {item.variantSku}</p>}
+                <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
+                  <div>
+                    <p className="text-neutral-500">Pedido</p>
+                    <p className="text-neutral-200 mt-0.5">{item.quantity}</p>
+                  </div>
+                  <div>
+                    <p className="text-neutral-500">Recibido</p>
+                    <p className={cn('mt-0.5 font-medium',
+                      item.isFullyReceived ? 'text-green-400' : item.quantityReceived > 0 ? 'text-amber-400' : 'text-neutral-500')}>
+                      {item.quantityReceived}/{item.quantity}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-neutral-500">Total</p>
+                    <p className="text-gold-400 mt-0.5 font-medium">{item.currency} {formatMoney(item.total)}</p>
+                  </div>
+                </div>
+                <p className="text-neutral-500 text-xs mt-2">Costo u.: {item.currency} {formatMoney(item.unitCost)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Columna resumen ── */}
+        <div className="space-y-3 order-1 lg:order-2">
+          {/* Datos */}
+          <div className="rounded-xl border border-neutral-800 bg-obsidian-900 divide-y divide-neutral-800/70">
+            <InfoRow label="Proveedor" value={po.supplierName ?? po.supplierId} />
+            <InfoRow label="Moneda" value={po.currency} />
+            {po.expectedDeliveryDate && <InfoRow label="Entrega esperada" value={fmtDate(po.expectedDeliveryDate)} />}
+          </div>
+
+          {/* Progreso de recepción */}
+          <div className="rounded-xl border border-neutral-800 bg-obsidian-900 p-4">
+            <div className="flex items-center justify-between text-xs mb-2">
+              <span className="text-neutral-500">Recepción</span>
+              <span className="text-neutral-300">{totalReceived}/{totalOrdered} u. · {receivePct}%</span>
+            </div>
+            <div className="h-2 rounded-full bg-obsidian-950 overflow-hidden">
+              <div className={cn('h-full rounded-full transition-all',
+                receivePct === 100 ? 'bg-green-500' : receivePct > 0 ? 'bg-amber-500' : 'bg-neutral-700')}
+                style={{ width: `${receivePct}%` }} />
+            </div>
+          </div>
+
+          {/* Totales */}
+          <div className="rounded-xl border border-neutral-800 bg-obsidian-900 p-4 space-y-2">
+            <div className="flex justify-between text-sm text-neutral-400">
+              <span>Subtotal</span>
+              <span>{po.currency} {formatMoney(po.subtotal)}</span>
+            </div>
+            {po.taxAmount > 0 && (
+              <div className="flex justify-between text-sm text-neutral-400">
+                <span>Impuesto</span>
+                <span>{po.currency} {formatMoney(po.taxAmount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-base font-semibold text-white border-t border-neutral-800 pt-2 mt-1">
+              <span>Total</span>
+              <span className="text-gold-400">{po.currency} {formatMoney(po.total)}</span>
+            </div>
+          </div>
+
+          {po.notes && (
+            <div className="rounded-xl border border-neutral-800 bg-obsidian-900 p-4">
+              <p className="text-xs text-neutral-500 mb-1">Notas</p>
+              <p className="text-sm text-neutral-200 whitespace-pre-wrap">{po.notes}</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -578,6 +611,7 @@ export default function PurchasesPage() {
         isOpen={!!detailId}
         onClose={() => setDetailId(null)}
         title="Detalle de orden de compra"
+        size="full"
       >
         {detailId && (
           <PurchaseDetail

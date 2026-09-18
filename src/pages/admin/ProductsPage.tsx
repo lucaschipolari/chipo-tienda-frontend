@@ -3,12 +3,13 @@ import { createPortal } from 'react-dom'
 import {
   Plus, Search, Edit2, Eye,
   Package, TrendingUp, AlertTriangle, ChevronDown, X, Loader2,
-  CheckCircle2, XCircle, Clock, Trash2, ImageDown,
+  CheckCircle2, XCircle, Clock, Trash2, ImageDown, LayoutGrid, List as ListIcon,
 } from 'lucide-react'
 import { useForm, Controller, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useDebounce } from '@/hooks/useDebounce'
+import { useLocalStorage } from '@/hooks/useLocalStorage'
 import {
   useProducts, useProduct, useCreateProduct, useUpdateProduct,
   useChangeProductStatus, useUpdateVariant, useAddVariant,
@@ -1154,6 +1155,78 @@ function ProductRow({ product, onEdit }: { product: ProductListItem; onEdit: () 
   )
 }
 
+// ─── Tarjeta de producto (vista cuadrícula) ─────────────────────────────────────
+
+function ProductCard({ product, onEdit }: { product: ProductListItem; onEdit: () => void }) {
+  const [menuRect, setMenuRect] = useState<DOMRect | null>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const { mutate: deleteProduct, isPending: deleting } = useDeleteProduct()
+  const [generating, setGenerating] = useState(false)
+
+  async function handleDownloadPlaca() {
+    setGenerating(true)
+    try {
+      await downloadProductPlaca(product)
+      toast.success('Placa descargada — lista para WhatsApp')
+    } catch {
+      toast.error('No se pudo generar la placa. Revisá que el producto tenga foto.')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border border-neutral-800 overflow-hidden flex flex-col" style={{ background: 'var(--surface)' }}>
+      <div className="relative aspect-square bg-obsidian-800 flex items-center justify-center">
+        {product.mainImageUrl
+          ? <img src={product.mainImageUrl} alt={product.name} className="h-full w-full object-cover" />
+          : <Package className="h-8 w-8 text-neutral-700" />}
+        <div className="absolute top-2 left-2"><StatusBadge status={product.status} /></div>
+      </div>
+
+      <div className="p-3 flex flex-col gap-2 flex-1">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-white line-clamp-2 leading-snug">{product.name}</p>
+          <p className="text-xs text-neutral-500 mt-0.5">{product.categoryName ?? '—'} · {product.sku}</p>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 mt-auto">
+          <div>
+            <p className="text-sm font-semibold text-white">{formatCurrency(product.basePrice, product.currency)}</p>
+            {product.compareAtPrice && (
+              <p className="text-xs text-neutral-500 line-through">{formatCurrency(product.compareAtPrice, product.currency)}</p>
+            )}
+          </div>
+          <StockBadge stock={product.totalStock} />
+        </div>
+
+        <div className="flex items-center gap-1 pt-2 border-t border-neutral-800/70">
+          <button onClick={handleDownloadPlaca} disabled={generating}
+            className="p-1.5 rounded-lg text-neutral-500 hover:text-gold-400 hover:bg-obsidian-700 transition-colors disabled:opacity-40"
+            title="Descargar placa para WhatsApp">
+            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageDown className="h-4 w-4" />}
+          </button>
+          <button onClick={onEdit}
+            className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-obsidian-700 transition-colors" title="Editar">
+            <Edit2 className="h-4 w-4" />
+          </button>
+          <button disabled={deleting}
+            onClick={() => { if (confirm(`¿Eliminar "${product.name}"? Esta acción no se puede deshacer.`)) deleteProduct(product.id) }}
+            className="p-1.5 rounded-lg text-neutral-500 hover:text-red-400 hover:bg-obsidian-700 transition-colors disabled:opacity-40" title="Eliminar">
+            <Trash2 className="h-4 w-4" />
+          </button>
+          <button ref={btnRef}
+            onClick={() => setMenuRect(r => r ? null : btnRef.current!.getBoundingClientRect())}
+            className="ml-auto flex items-center gap-1 px-2 py-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-obsidian-700 transition-colors text-xs">
+            Estado <ChevronDown className="h-3 w-3" />
+          </button>
+          {menuRect && <StatusMenu product={product} anchorRect={menuRect} onClose={() => setMenuRect(null)} />}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Página principal ──────────────────────────────────────────────────────────
 
 export default function ProductsPage() {
@@ -1163,6 +1236,7 @@ export default function ProductsPage() {
   const [page, setPage] = useState(1)
   const [showCreate, setShowCreate] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  const [view, setView] = useLocalStorage<'list' | 'grid'>('products-view', 'list')
   const debouncedSearch = useDebounce(search, 350)
 
   const { data, isLoading } = useProducts({
@@ -1323,53 +1397,73 @@ export default function ProductsPage() {
             <X className="h-3.5 w-3.5" /> Limpiar
           </button>
         )}
-      </div>
 
-      <div className="rounded-2xl border border-neutral-800 overflow-hidden" style={{ background: 'var(--surface)' }}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-neutral-800 bg-obsidian-800/50">
-                {['Producto', 'Categoría', 'Precio', 'Stock', 'Variantes', 'Estado', ''].map((h) => (
-                  <th key={h} className="px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr><td colSpan={7} className="px-4 py-10 text-center text-neutral-500 text-sm">
-                  <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />Cargando productos...
-                </td></tr>
-              ) : !data?.items.length ? (
-                <tr><td colSpan={7} className="px-4 py-12 text-center text-neutral-500">
-                  <Package className="h-8 w-8 mx-auto mb-2 text-neutral-700" />
-                  No hay productos que coincidan con los filtros.
-                </td></tr>
-              ) : data.items.map((p) => (
-                <ProductRow key={p.id} product={p} onEdit={() => setEditId(p.id)} />
-              ))}
-            </tbody>
-          </table>
+        {/* Toggle lista / cuadrícula */}
+        <div className="flex items-center rounded-xl border border-neutral-800 bg-obsidian-800 p-0.5 ml-auto">
+          <button onClick={() => setView('list')} title="Vista lista"
+            className={cn('p-1.5 rounded-lg transition-colors', view === 'list' ? 'bg-obsidian-700 text-gold-400' : 'text-neutral-500 hover:text-neutral-200')}>
+            <ListIcon className="h-4 w-4" />
+          </button>
+          <button onClick={() => setView('grid')} title="Vista cuadrícula"
+            className={cn('p-1.5 rounded-lg transition-colors', view === 'grid' ? 'bg-obsidian-700 text-gold-400' : 'text-neutral-500 hover:text-neutral-200')}>
+            <LayoutGrid className="h-4 w-4" />
+          </button>
         </div>
-
-        {data && data.totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-800">
-            <p className="text-xs text-neutral-500">
-              {data.totalCount} productos · página {data.page} de {data.totalPages}
-            </p>
-            <div className="flex gap-1">
-              <button disabled={!data.hasPreviousPage} onClick={() => setPage(p => p - 1)}
-                className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                Anterior
-              </button>
-              <button disabled={!data.hasNextPage} onClick={() => setPage(p => p + 1)}
-                className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                Siguiente
-              </button>
-            </div>
-          </div>
-        )}
       </div>
+
+      {isLoading ? (
+        <div className="rounded-2xl border border-neutral-800 px-4 py-12 text-center text-neutral-500 text-sm" style={{ background: 'var(--surface)' }}>
+          <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />Cargando productos...
+        </div>
+      ) : !data?.items.length ? (
+        <div className="rounded-2xl border border-neutral-800 px-4 py-12 text-center text-neutral-500" style={{ background: 'var(--surface)' }}>
+          <Package className="h-8 w-8 mx-auto mb-2 text-neutral-700" />
+          No hay productos que coincidan con los filtros.
+        </div>
+      ) : view === 'grid' ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {data.items.map((p) => (
+            <ProductCard key={p.id} product={p} onEdit={() => setEditId(p.id)} />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-neutral-800 overflow-hidden" style={{ background: 'var(--surface)' }}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-neutral-800 bg-obsidian-800/50">
+                  {['Producto', 'Categoría', 'Precio', 'Stock', 'Variantes', 'Estado', ''].map((h) => (
+                    <th key={h} className="px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {data.items.map((p) => (
+                  <ProductRow key={p.id} product={p} onEdit={() => setEditId(p.id)} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {data && data.totalPages > 1 && (
+        <div className="flex items-center justify-between px-1">
+          <p className="text-xs text-neutral-500">
+            {data.totalCount} productos · página {data.page} de {data.totalPages}
+          </p>
+          <div className="flex gap-1">
+            <button disabled={!data.hasPreviousPage} onClick={() => setPage(p => p - 1)}
+              className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              Anterior
+            </button>
+            <button disabled={!data.hasNextPage} onClick={() => setPage(p => p + 1)}
+              className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
 
       {showCreate && <CreateProductModal onClose={() => setShowCreate(false)} />}
       {editId    && <EditProductModal productId={editId} onClose={() => setEditId(null)} />}
