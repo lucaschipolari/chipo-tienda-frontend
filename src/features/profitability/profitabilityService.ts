@@ -1,7 +1,7 @@
 import { httpClient } from '@/services/http/httpClient'
 import type {
   ProfitabilityRow, ProfitabilitySummary, ProductProfitabilityDetail,
-  ProfitabilitySettings, GetProfitabilityParams,
+  ProfitabilitySettings, CategoryMargin, GetProfitabilityParams,
 } from '@/types/profitability.types'
 
 const BASE = '/profitability'
@@ -35,4 +35,10 @@ export const profitabilityService = {
 
   setTargetMargin: (productId: string, targetMarginPct: number | null): Promise<void> =>
     httpClient.put<void>(`${BASE}/${productId}/target-margin`, { targetMarginPct }),
+
+  getCategoryMargins: (): Promise<CategoryMargin[]> =>
+    httpClient.get<CategoryMargin[]>(`${BASE}/category-margins`),
+
+  setCategoryMargins: (items: CategoryMargin[]): Promise<void> =>
+    httpClient.put<void>(`${BASE}/category-margins`, { items }),
 }

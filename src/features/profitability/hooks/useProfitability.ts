@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { profitabilityService } from '../profitabilityService'
-import type { GetProfitabilityParams, ProfitabilitySettings } from '@/types/profitability.types'
+import type { GetProfitabilityParams, ProfitabilitySettings, CategoryMargin } from '@/types/profitability.types'
 
 export const profitabilityKeys = {
   all: ['profitability'] as const,
@@ -9,6 +9,7 @@ export const profitabilityKeys = {
   summary: () => [...profitabilityKeys.all, 'summary'] as const,
   detail: (id: string) => [...profitabilityKeys.all, 'detail', id] as const,
   settings: () => [...profitabilityKeys.all, 'settings'] as const,
+  categoryMargins: () => [...profitabilityKeys.all, 'category-margins'] as const,
 }
 
 export function useProfitability(params: GetProfitabilityParams = {}) {
@@ -49,6 +50,25 @@ export function useSetProfitabilitySettings() {
       toast.success('Configuración de rentabilidad guardada.')
     },
     onError: () => toast.error('No se pudo guardar la configuración.'),
+  })
+}
+
+export function useCategoryMargins() {
+  return useQuery({
+    queryKey: profitabilityKeys.categoryMargins(),
+    queryFn: () => profitabilityService.getCategoryMargins(),
+  })
+}
+
+export function useSetCategoryMargins() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (items: CategoryMargin[]) => profitabilityService.setCategoryMargins(items),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: profitabilityKeys.all })
+      toast.success('Márgenes por categoría guardados.')
+    },
+    onError: () => toast.error('No se pudieron guardar los márgenes por categoría.'),
   })
 }
 

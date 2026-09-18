@@ -19,6 +19,7 @@ export interface ProfitabilityRow {
   marginPct?: number
   targetMarginPct: number
   targetIsCustom: boolean
+  targetSource: 'product' | 'category' | 'general'
   suggestedPrice?: number
   priceDifference?: number
   status: ProfitabilityStatus
@@ -48,6 +49,11 @@ export interface CostHistoryEntry {
 export interface ProductProfitabilityDetail {
   analysis: ProfitabilityRow
   history: CostHistoryEntry[]
+}
+
+export interface CategoryMargin {
+  categoryId: string
+  targetMarginPct: number
 }
 
 export interface ProfitabilitySettings {

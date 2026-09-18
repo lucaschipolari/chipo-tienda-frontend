@@ -15,6 +15,7 @@ import { useCategories, flattenCategories } from '@/features/categories/hooks/us
 import {
   useProfitability, useProfitabilitySummary, useProductProfitability,
   useProfitabilitySettings, useSetProfitabilitySettings, useSetProductTargetMargin,
+  useCategoryMargins, useSetCategoryMargins,
 } from '@/features/profitability/hooks/useProfitability'
 import type {
   ProfitabilityRow, ProfitabilityStatus, GetProfitabilityParams, ProfitabilitySettings,
@@ -239,7 +240,9 @@ function ProfitabilityTableRow({ row, onOpen }: { row: ProfitabilityRow; onOpen:
       <td className="px-4 py-3 text-right text-neutral-200">{money(row.profit, row.currency)}</td>
       <td className="px-4 py-3 text-right font-medium text-white">{pct(row.marginPct)}</td>
       <td className="px-4 py-3 text-right text-neutral-400">
-        {row.targetMarginPct.toFixed(0)}%{row.targetIsCustom && <span title="Margen específico del producto" className="text-gold-400"> *</span>}
+        {row.targetMarginPct.toFixed(0)}%
+        {row.targetSource === 'product' && <span title="Margen específico del producto" className="text-gold-400"> *</span>}
+        {row.targetSource === 'category' && <span title="Margen de la categoría" className="text-info-400"> ᶜ</span>}
       </td>
       <td className="px-4 py-3 text-right text-neutral-200">{money(row.suggestedPrice, row.currency)}</td>
       <td className={cn('px-4 py-3 text-right', diffPositive ? 'text-gold-400' : 'text-neutral-500')}>
@@ -294,7 +297,7 @@ function ProductDetailDrawer({ productId, onClose }: { productId: string | null;
               value={a.priceDifference == null ? '—' : `${a.priceDifference > 0 ? '+' : ''}${formatMoney(a.priceDifference)}`}
               accent={(a.priceDifference ?? 0) > 0} />
             <Metric label="Margen actual" value={pct(a.marginPct)} />
-            <Metric label="Margen objetivo" value={`${a.targetMarginPct.toFixed(0)}%${a.targetIsCustom ? ' (propio)' : ' (general)'}`} />
+            <Metric label="Margen objetivo" value={`${a.targetMarginPct.toFixed(0)}% (${targetSourceLabel(a.targetSource)})`} />
           </section>
 
           {/* Margen objetivo por producto */}
@@ -392,6 +395,14 @@ function CostSparkline({ history, currency }: { history: { unitCost: number; rec
   )
 }
 
+function targetSourceLabel(source: string) {
+  switch (source) {
+    case 'product': return 'propio'
+    case 'category': return 'categoría'
+    default: return 'general'
+  }
+}
+
 function sourceLabel(source: string) {
   switch (source) {
     case 'PurchaseReceipt': return 'Compra recibida'
@@ -404,18 +415,43 @@ function sourceLabel(source: string) {
 // ─── Modal de configuración ──────────────────────────────────────────────────────
 function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { data } = useProfitabilitySettings()
+  const { data: categories = [] } = useCategories()
+  const { data: catMargins = [] } = useCategoryMargins()
   const save = useSetProfitabilitySettings()
+  const saveCats = useSetCategoryMargins()
+
   const [form, setForm] = useState<ProfitabilitySettings | null>(null)
+  // margen por categoría como texto ('' = usa el general)
+  const [catInputs, setCatInputs] = useState<Record<string, string> | null>(null)
 
   const current = form ?? data ?? null
+  const flatCats = useMemo(() => flattenCategories(categories), [categories])
+
+  // Inicializar inputs de categoría cuando llegan los datos
+  const initialCatInputs = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const m of catMargins) map[m.categoryId] = String(m.targetMarginPct)
+    return map
+  }, [catMargins])
+  const cats = catInputs ?? initialCatInputs
+
+  const handleSave = () => {
+    if (!current) return
+    const items = Object.entries(cats)
+      .filter(([, v]) => v.trim() !== '' && !Number.isNaN(Number(v)))
+      .map(([categoryId, v]) => ({ categoryId, targetMarginPct: Number(v) }))
+    save.mutate(current, {
+      onSuccess: () => saveCats.mutate(items, { onSuccess: onClose }),
+    })
+  }
 
   return (
-    <Modal isOpen={open} onClose={onClose} title="Configuración de rentabilidad">
+    <Modal isOpen={open} onClose={onClose} title="Configuración de rentabilidad" size="lg">
       {!current ? (
         <div className="text-neutral-500 text-sm py-6 text-center">Cargando…</div>
       ) : (
-        <div className="space-y-4">
-          <Field label="Margen objetivo general (%)" hint="Se usa cuando el producto no tiene un margen propio.">
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+          <Field label="Margen objetivo general (%)" hint="Se usa cuando el producto y su categoría no tienen margen propio.">
             <input type="number" min={0} max={99} value={current.targetMarginPct}
               onChange={(e) => setForm({ ...current, targetMarginPct: Number(e.target.value) })}
               className={inputCls} />
@@ -440,10 +476,34 @@ function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }
             </div>
           </Field>
 
-          <div className="flex justify-end gap-2 pt-2">
+          {/* Margen por categoría */}
+          <div className="pt-2 border-t border-neutral-800">
+            <p className="text-sm font-medium text-neutral-300 mb-1">Margen objetivo por categoría</p>
+            <p className="text-xs text-neutral-500 mb-3">
+              Ej: Diseñador y Nicho más alto, Árabes más bajo, Decants aparte. Vacío = usa el general ({current.targetMarginPct}%).
+              Un producto con margen propio siempre tiene prioridad.
+            </p>
+            <div className="space-y-1.5">
+              {flatCats.map((c) => (
+                <div key={c.id} className="flex items-center gap-2">
+                  <span className="flex-1 text-sm text-neutral-300 truncate">{c.name}</span>
+                  <input
+                    type="number" min={0} max={99} step={1}
+                    value={cats[c.id] ?? ''}
+                    placeholder="general"
+                    onChange={(e) => setCatInputs({ ...cats, [c.id]: e.target.value })}
+                    className="h-9 w-24 px-3 rounded-lg bg-obsidian-950 border border-neutral-800 text-sm text-white outline-none focus:border-gold-500/40"
+                  />
+                  <span className="text-neutral-500 text-sm w-4">%</span>
+                </div>
+              ))}
+              {flatCats.length === 0 && <p className="text-sm text-neutral-600">No hay categorías.</p>}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 sticky bottom-0 bg-obsidian-950/80 backdrop-blur">
             <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-            <Button disabled={save.isPending}
-              onClick={() => save.mutate(current, { onSuccess: onClose })}>
+            <Button disabled={save.isPending || saveCats.isPending} onClick={handleSave}>
               <Save className="h-4 w-4" /> Guardar
             </Button>
           </div>
