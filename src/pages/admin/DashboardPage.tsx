@@ -171,7 +171,7 @@ export default function DashboardPage() {
   const dailyBars = (fin?.revenueByDay ?? []).map(d => ({
     date: new Date(d.date).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }),
     Ingresos: d.revenue,
-    Ganancia: Math.round(d.revenue - d.costs - d.expenses),
+    Ganancia: Math.round(d.revenue - d.costs), // ganancia bruta de ventas (sin gastos operativos)
   }))
 
   // Top productos por unidades vendidas (barras horizontales)
