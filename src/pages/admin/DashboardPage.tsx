@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip,
+  Legend, ResponsiveContainer,
 } from 'recharts'
 import {
   TrendingUp, TrendingDown, ShoppingCart, AlertTriangle, Users,
-  DollarSign, ArrowUpRight, Package, CreditCard, Truck,
+  DollarSign, ArrowUpRight, Package, CreditCard, Truck, BarChart3,
 } from 'lucide-react'
 import { Card }    from '@/components/ui/Card/Card'
 import { Badge }   from '@/components/ui/Badge/Badge'
@@ -166,12 +167,31 @@ export default function DashboardPage() {
   const kpis = fin?.kpis
   const currency = kpis?.currency ?? 'ARS'
 
-  // Build chart data from revenueByDay
-  const chartData = (fin?.revenueByDay ?? []).map(d => ({
+  // Ventas y ganancia por día (barras)
+  const dailyBars = (fin?.revenueByDay ?? []).map(d => ({
     date: new Date(d.date).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }),
     Ingresos: d.revenue,
-    Egresos:  d.costs + d.expenses,
+    Ganancia: Math.round(d.revenue - d.costs - d.expenses),
   }))
+
+  // Top productos por unidades vendidas (barras horizontales)
+  const unitsBars = [...(fin?.topProducts ?? [])]
+    .sort((a, b) => b.quantity - a.quantity)
+    .slice(0, 7)
+    .map(p => ({ name: p.productName, Unidades: p.quantity }))
+
+  // Top productos por ganancia (barras horizontales, con margen)
+  const profitBars = [...(fin?.topProducts ?? [])]
+    .sort((a, b) => b.profit - a.profit)
+    .slice(0, 7)
+    .map(p => ({ name: p.productName, Ganancia: Math.round(p.profit), margin: p.margin }))
+
+  const truncate = (s: string, n = 18) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
+  const compact = (n: number) =>
+    Math.abs(n) >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M`
+    : Math.abs(n) >= 1_000 ? `${Math.round(n / 1_000)}k`
+    : String(n)
+  const CHART_COLORS = ['#EAB308', '#22C55E', '#38BDF8', '#A78BFA', '#F472B6', '#FB923C', '#2DD4BF']
 
   // Count low stock products (approximate: no specific low-stock endpoint on products list)
   const lowStockCount = productsData?.items.filter(p => !p.isActive).length ?? 0
@@ -276,11 +296,11 @@ export default function DashboardPage() {
       {/* ── Charts + Sidebar ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-        {/* Area chart — Ingresos vs Egresos */}
+        {/* Barras — Ventas y ganancia por día */}
         <Card className="lg:col-span-2">
           <Card.Header>
             <div className="flex items-center justify-between">
-              <Card.Title>Ingresos vs Egresos</Card.Title>
+              <Card.Title>Ventas y ganancia por día</Card.Title>
               <button
                 onClick={() => navigate('/admin/finance')}
                 className="text-xs text-gold-400 hover:text-gold-300 flex items-center gap-1 transition-colors"
@@ -291,47 +311,39 @@ export default function DashboardPage() {
           </Card.Header>
           <Card.Body>
             {finLoading ? (
-              <div className="h-48 flex items-center justify-center">
+              <div className="h-56 flex items-center justify-center">
                 <div className="h-6 w-6 rounded-full border-2 border-gold-400 border-t-transparent animate-spin" />
               </div>
-            ) : chartData.length === 0 ? (
-              <div className="h-48 flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-neutral-800">
-                <TrendingUp className="h-8 w-8 text-neutral-700" />
+            ) : dailyBars.length === 0 ? (
+              <div className="h-56 flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-neutral-800">
+                <BarChart3 className="h-8 w-8 text-neutral-700" />
                 <p className="text-sm text-neutral-600">Sin datos para el período seleccionado</p>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="gIngresos" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#EAB308" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="#EAB308" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="gEgresos" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#EF4444" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3a" />
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={dailyBars} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3a" vertical={false} />
                   <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 10 }} />
-                  <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} />
+                  <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} tickFormatter={compact} width={44} />
                   <Tooltip
+                    cursor={{ fill: 'rgba(255,255,255,0.04)' }}
                     contentStyle={{ background: '#12121e', border: '1px solid #2a2a3a', borderRadius: 8 }}
                     formatter={(v: number, name: string) => [`ARS ${formatMoney(v)}`, name]}
                   />
-                  <Area type="monotone" dataKey="Ingresos" stroke="#EAB308" fill="url(#gIngresos)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="Egresos"  stroke="#EF4444" fill="url(#gEgresos)"  strokeWidth={2} />
-                </AreaChart>
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="Ingresos" fill="#EAB308" radius={[4, 4, 0, 0]} maxBarSize={38} />
+                  <Bar dataKey="Ganancia" fill="#22C55E" radius={[4, 4, 0, 0]} maxBarSize={38} />
+                </BarChart>
               </ResponsiveContainer>
             )}
           </Card.Body>
         </Card>
 
-        {/* Top productos */}
+        {/* Top productos por unidades (barras horizontales) */}
         <Card>
           <Card.Header>
             <div className="flex items-center justify-between">
-              <Card.Title>Top productos</Card.Title>
+              <Card.Title>Top productos · unidades</Card.Title>
               <button
                 onClick={() => navigate('/admin/reports')}
                 className="text-xs text-gold-400 hover:text-gold-300 flex items-center gap-1 transition-colors"
@@ -340,39 +352,79 @@ export default function DashboardPage() {
               </button>
             </div>
           </Card.Header>
-          <Card.Body padding="none">
+          <Card.Body>
             {finLoading ? (
-              <div className="p-4 space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-10 bg-neutral-800 rounded-lg animate-pulse" />
-                ))}
+              <div className="h-56 space-y-3">
+                {[...Array(6)].map((_, i) => <div key={i} className="h-6 bg-neutral-800 rounded animate-pulse" />)}
               </div>
-            ) : (fin?.topProducts ?? []).length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-48 gap-3">
+            ) : unitsBars.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-56 gap-3">
                 <Package className="h-8 w-8 text-neutral-700" />
                 <p className="text-sm text-neutral-600">Sin datos de productos</p>
               </div>
             ) : (
-              <div className="divide-y divide-neutral-800/60">
-                {(fin?.topProducts ?? []).slice(0, 6).map((p, i) => (
-                  <div key={i} className="px-4 py-3 flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-sm text-white truncate font-medium">{p.productName}</p>
-                      <p className="text-xs text-neutral-500">{p.quantity} uds.</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-sm text-gold-400 font-mono">ARS {p.revenue.toFixed(0)}</p>
-                      <p className={`text-xs font-semibold ${p.margin > 20 ? 'text-green-400' : p.margin > 10 ? 'text-yellow-400' : 'text-red-400'}`}>
-                        {p.margin.toFixed(1)}%
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={unitsBars} layout="vertical" margin={{ top: 0, right: 12, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3a" horizontal={false} />
+                  <XAxis type="number" tick={{ fill: '#6b7280', fontSize: 10 }} allowDecimals={false} />
+                  <YAxis type="category" dataKey="name" width={96} tick={{ fill: '#9ca3af', fontSize: 10 }}
+                    tickFormatter={(v: string) => truncate(v, 14)} />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                    contentStyle={{ background: '#12121e', border: '1px solid #2a2a3a', borderRadius: 8 }}
+                    formatter={(v: number) => [`${v} uds.`, 'Unidades']}
+                  />
+                  <Bar dataKey="Unidades" radius={[0, 4, 4, 0]} maxBarSize={22}>
+                    {unitsBars.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             )}
           </Card.Body>
         </Card>
       </div>
+
+      {/* ── Top productos por ganancia (barras horizontales) ── */}
+      <Card>
+        <Card.Header>
+          <div className="flex items-center justify-between">
+            <Card.Title>Top productos · ganancia</Card.Title>
+            <button
+              onClick={() => navigate('/admin/profitability')}
+              className="text-xs text-gold-400 hover:text-gold-300 flex items-center gap-1 transition-colors"
+            >
+              Ver rentabilidad <ArrowUpRight className="h-3 w-3" />
+            </button>
+          </div>
+        </Card.Header>
+        <Card.Body>
+          {finLoading ? (
+            <div className="h-64 space-y-3">
+              {[...Array(7)].map((_, i) => <div key={i} className="h-6 bg-neutral-800 rounded animate-pulse" />)}
+            </div>
+          ) : profitBars.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 gap-3">
+              <TrendingUp className="h-8 w-8 text-neutral-700" />
+              <p className="text-sm text-neutral-600">Sin datos de productos</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={Math.max(240, profitBars.length * 42)}>
+              <BarChart data={profitBars} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3a" horizontal={false} />
+                <XAxis type="number" tick={{ fill: '#6b7280', fontSize: 10 }} tickFormatter={compact} />
+                <YAxis type="category" dataKey="name" width={120} tick={{ fill: '#9ca3af', fontSize: 10 }}
+                  tickFormatter={(v: string) => truncate(v, 18)} />
+                <Tooltip
+                  cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                  contentStyle={{ background: '#12121e', border: '1px solid #2a2a3a', borderRadius: 8 }}
+                  formatter={(v: number, _n, item: any) => [`ARS ${formatMoney(v)} · margen ${item?.payload?.margin?.toFixed(1)}%`, 'Ganancia']}
+                />
+                <Bar dataKey="Ganancia" fill="#22C55E" radius={[0, 4, 4, 0]} maxBarSize={26} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </Card.Body>
+      </Card>
 
       {/* ── Accesos rápidos ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
