@@ -171,7 +171,7 @@ export default function DashboardPage() {
   const dailyBars = (fin?.revenueByDay ?? []).map(d => ({
     date: new Date(d.date).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }),
     Ingresos: d.revenue,
-    Ganancia: Math.round(d.revenue - d.costs), // ganancia bruta de ventas (sin gastos operativos)
+    Ganancia: Math.round(d.profit), // ingresos − costo de lo vendido ese día
   }))
 
   // Top productos por unidades vendidas (barras horizontales)
@@ -300,10 +300,15 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2">
           <Card.Header>
             <div className="flex items-center justify-between">
-              <Card.Title>Ventas y ganancia por día</Card.Title>
+              <div>
+                <Card.Title>Ventas y ganancia por día</Card.Title>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  Ingresos = lo vendido · Ganancia = ingresos − costo de lo vendido
+                </p>
+              </div>
               <button
                 onClick={() => navigate('/admin/finance')}
-                className="text-xs text-gold-400 hover:text-gold-300 flex items-center gap-1 transition-colors"
+                className="text-xs text-gold-400 hover:text-gold-300 flex items-center gap-1 transition-colors shrink-0"
               >
                 Ver finanzas <ArrowUpRight className="h-3 w-3" />
               </button>

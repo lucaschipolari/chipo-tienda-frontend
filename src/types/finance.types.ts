@@ -32,6 +32,7 @@ export interface RevenueByDay {
   revenue: number
   costs: number
   expenses: number
+  profit: number
 }
 
 export interface TopProduct {
