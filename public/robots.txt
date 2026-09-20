@@ -10,4 +10,4 @@ Disallow: /cart
 Disallow: /account
 Disallow: /orders
 
-Sitemap: https://chipoperfumeria.vercel.app/sitemap.xml
+Sitemap: https://chipo.ar/sitemap.xml
