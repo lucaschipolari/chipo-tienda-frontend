@@ -131,16 +131,16 @@ export default function HomePage() {
     <div className="min-h-screen">
       {/* ── Franja de marca (logo) ── */}
       <section className="border-b border-white/5 bg-black">
-        <div className="mx-auto max-w-3xl px-4 py-6 text-center sm:px-6 sm:py-8">
+        <div className="mx-auto max-w-3xl px-4 py-5 text-center sm:px-6 sm:py-6">
           <Reveal>
-            <img src="/chipo-logo.svg" alt="Chipo · Fragancias" className="mx-auto h-12 w-auto sm:h-16" />
+            <img src="/chipo-logo.svg" alt="Chipo · Fragancias" className="mx-auto h-10 w-auto sm:h-12" />
           </Reveal>
         </div>
       </section>
 
       {/* ── Buscador + categorías — barra fija bajo el header ── */}
       <div className="sticky top-16 z-20 border-b border-white/5 bg-black/95 backdrop-blur">
-        <div className="mx-auto max-w-3xl px-4 py-3 sm:px-6">
+        <div className="mx-auto max-w-5xl px-4 py-2.5 sm:px-6">
           {/* Buscador */}
           <div className="relative mx-auto max-w-md">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
