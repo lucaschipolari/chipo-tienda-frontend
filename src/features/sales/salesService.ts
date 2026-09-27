@@ -29,4 +29,16 @@ export const salesService = {
 
   getReport: (from: string, to: string) =>
     httpClient.get<SalesReport>(`${BASE}/report`, { from, to }),
+
+  getDecantSales: (granularity: 'day' | 'week' | 'month') =>
+    httpClient.get<DecantSales>(`${BASE}/decants-sold`, { granularity }),
+}
+
+export interface DecantPoint { label: string; units: number; ml: number }
+export interface DecantSales {
+  granularity: string
+  totalUnits: number
+  totalMl: number
+  series: DecantPoint[]
+  top: { productName: string; units: number }[]
 }

@@ -69,3 +69,11 @@ export function useSalesReport(from: string, to: string) {
     enabled: !!from && !!to,
   })
 }
+
+export function useDecantSales(granularity: 'day' | 'week' | 'month') {
+  return useQuery({
+    queryKey: [...saleKeys.all, 'decants', granularity] as const,
+    queryFn: () => salesService.getDecantSales(granularity),
+    staleTime: 5 * 60 * 1000,
+  })
+}

@@ -13,7 +13,7 @@ import { Badge }   from '@/components/ui/Badge/Badge'
 import { Button }  from '@/components/ui/Button/Button'
 import { useFinanceDashboard } from '@/features/finance/hooks/useFinance'
 import { useOrders }           from '@/features/orders/hooks/useOrders'
-import { useSales, useSalesReport } from '@/features/sales/hooks/useSales'
+import { useSales, useSalesReport, useDecantSales } from '@/features/sales/hooks/useSales'
 import { useStockValuation } from '@/features/inventory/hooks/useInventory'
 import { useProducts }         from '@/features/products/hooks/useProducts'
 import { formatMoney } from '@/utils/helpers/formatMoney'
@@ -431,6 +431,9 @@ export default function DashboardPage() {
         </Card.Body>
       </Card>
 
+      {/* ── Decants vendidos ── */}
+      <DecantSalesCard />
+
       {/* ── Accesos rápidos ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
@@ -553,5 +556,102 @@ export default function DashboardPage() {
       )}
 
     </div>
+  )
+}
+
+// ─── Decants vendidos (por día / semana / mes) ──────────────────────────────────
+const DECANT_RANGES: { key: 'day' | 'week' | 'month'; label: string }[] = [
+  { key: 'day',   label: 'Día' },
+  { key: 'week',  label: 'Semana' },
+  { key: 'month', label: 'Mes' },
+]
+
+function DecantSalesCard() {
+  const [gran, setGran] = useState<'day' | 'week' | 'month'>('day')
+  const { data, isLoading } = useDecantSales(gran)
+  const rangeLabel = gran === 'day' ? 'últimos 30 días' : gran === 'week' ? 'últimas 12 semanas' : 'últimos 12 meses'
+
+  return (
+    <Card>
+      <Card.Header>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <Card.Title>Decants vendidos</Card.Title>
+            <p className="text-xs text-neutral-500 mt-0.5">Unidades vendidas · {rangeLabel}</p>
+          </div>
+          <div className="flex items-center gap-1 rounded-lg border border-neutral-800 bg-obsidian-900 p-0.5">
+            {DECANT_RANGES.map(r => (
+              <button
+                key={r.key}
+                onClick={() => setGran(r.key)}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                  gran === r.key ? 'bg-gold-500/15 text-gold-400' : 'text-neutral-500 hover:text-neutral-200'
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </Card.Header>
+      <Card.Body>
+        {/* Totales */}
+        <div className="flex flex-wrap gap-6 mb-4">
+          <div>
+            <p className="text-2xl font-bold text-white">{data?.totalUnits ?? 0}</p>
+            <p className="text-xs text-neutral-500">decants vendidos</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-gold-400">{data ? (data.totalMl / 1000).toFixed(1) : '0'} L</p>
+            <p className="text-xs text-neutral-500">{data?.totalMl ?? 0} ml en total</p>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="h-56 flex items-center justify-center">
+            <div className="h-6 w-6 rounded-full border-2 border-gold-400 border-t-transparent animate-spin" />
+          </div>
+        ) : !data || data.totalUnits === 0 ? (
+          <div className="h-40 flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-neutral-800">
+            <Package className="h-8 w-8 text-neutral-700" />
+            <p className="text-sm text-neutral-600">Sin decants vendidos en este período</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {/* Barras por período */}
+            <div className="lg:col-span-2">
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={data.series} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3a" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fill: '#6b7280', fontSize: 10 }}
+                    interval={gran === 'day' ? 4 : 0} />
+                  <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} allowDecimals={false} width={30} />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                    contentStyle={{ background: '#12121e', border: '1px solid #2a2a3a', borderRadius: 8 }}
+                    formatter={(v: number, _n, item: any) => [`${v} decants · ${item?.payload?.ml ?? 0} ml`, 'Vendidos']}
+                  />
+                  <Bar dataKey="units" fill="#38BDF8" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Top decants */}
+            <div>
+              <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Más vendidos</p>
+              <div className="space-y-2">
+                {data.top.map((t, i) => (
+                  <div key={i} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="text-neutral-300 truncate">{t.productName.replace(' (Decant)', '')}</span>
+                    <span className="shrink-0 rounded-md bg-white/5 px-2 py-0.5 text-xs text-white">{t.units}</span>
+                  </div>
+                ))}
+                {data.top.length === 0 && <p className="text-sm text-neutral-600">—</p>}
+              </div>
+            </div>
+          </div>
+        )}
+      </Card.Body>
+    </Card>
   )
 }
