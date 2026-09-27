@@ -84,6 +84,7 @@ export default function HomePage() {
   const [search, setSearch] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [sortBy, setSortBy] = useState('relevant')
+  const [visible, setVisible] = useState(24)   // cuántos productos se muestran (botón "Ver más")
   const debounced = useDebounce(search, 300)
 
   const { data: categories } = useCategories()
@@ -94,11 +95,14 @@ export default function HomePage() {
 
   const { data, isLoading } = useProducts({
     page: 1,
-    pageSize: 60,
+    pageSize: 500,   // traemos todo el catálogo publicado y paginamos en cliente con "Ver más"
     categoryId: categoryId || undefined,
     search: debounced.trim() || undefined,
     status: 'Published',
   })
+
+  // Reiniciar la cantidad visible cuando cambian los filtros/orden
+  useEffect(() => { setVisible(24) }, [debounced, categoryId, sortBy])
 
   // Registrar búsquedas (una vez por término, cuando llegan resultados)
   const lastTracked = useRef<string>('')
@@ -225,13 +229,34 @@ export default function HomePage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
-            {products.map((p, i) => (
-              <Reveal key={p.id} delay={(i % 4) * 60} className="h-full">
-                <ProductCard product={p} />
-              </Reveal>
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
+              {products.slice(0, visible).map((p, i) => (
+                <Reveal key={p.id} delay={(i % 4) * 60} className="h-full">
+                  <ProductCard product={p} />
+                </Reveal>
+              ))}
+            </div>
+
+            {/* Ver más / contador */}
+            {products.length > visible ? (
+              <div className="mt-10 flex flex-col items-center gap-3">
+                <p className="text-xs text-neutral-500">
+                  Mostrando {Math.min(visible, products.length)} de {products.length} perfumes
+                </p>
+                <button
+                  onClick={() => setVisible(v => v + 24)}
+                  className="rounded-full bg-white px-8 py-3 text-sm font-semibold text-black transition-colors hover:bg-neutral-200"
+                >
+                  Ver más perfumes
+                </button>
+              </div>
+            ) : products.length > 24 ? (
+              <p className="mt-10 text-center text-xs text-neutral-500">
+                Estás viendo los {products.length} perfumes {categoryId ? 'de esta categoría' : 'del catálogo'}.
+              </p>
+            ) : null}
+          </>
         )}
         </div>
       </section>
