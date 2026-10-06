@@ -186,7 +186,14 @@ export default function DashboardPage() {
     .filter(p => p.profit != null)
     .sort((a, b) => (b.profit ?? 0) - (a.profit ?? 0))
     .slice(0, 7)
-    .map(p => ({ name: p.productName, Ganancia: Math.round(p.profit ?? 0), margin: p.margin ?? 0 }))
+    .map(p => ({
+      name: p.productName,
+      Ganancia: Math.round(p.profit ?? 0),
+      margin: p.margin ?? 0,
+      units: p.quantity,
+      revenue: p.revenue,
+      cost: p.cost ?? 0,
+    }))
 
   const truncate = (s: string, n = 18) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
   const compact = (n: number) =>
@@ -395,10 +402,13 @@ export default function DashboardPage() {
       <Card>
         <Card.Header>
           <div className="flex items-center justify-between">
-            <Card.Title>Top productos · ganancia</Card.Title>
+            <div>
+              <Card.Title>Top productos · ganancia</Card.Title>
+              <p className="text-xs text-neutral-500 mt-0.5">Ganancia total del período (suma de todas las unidades vendidas)</p>
+            </div>
             <button
               onClick={() => navigate('/admin/profitability')}
-              className="text-xs text-gold-400 hover:text-gold-300 flex items-center gap-1 transition-colors"
+              className="text-xs text-gold-400 hover:text-gold-300 flex items-center gap-1 transition-colors shrink-0"
             >
               Ver rentabilidad <ArrowUpRight className="h-3 w-3" />
             </button>
@@ -421,11 +431,7 @@ export default function DashboardPage() {
                 <XAxis type="number" tick={{ fill: '#6b7280', fontSize: 10 }} tickFormatter={compact} />
                 <YAxis type="category" dataKey="name" width={120} tick={{ fill: '#9ca3af', fontSize: 10 }}
                   tickFormatter={(v: string) => truncate(v, 18)} />
-                <Tooltip
-                  cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-                  contentStyle={{ background: '#12121e', border: '1px solid #2a2a3a', borderRadius: 8 }}
-                  formatter={(v: number, _n, item: any) => [`ARS ${formatMoney(v)} · margen ${item?.payload?.margin?.toFixed(1)}%`, 'Ganancia']}
-                />
+                <Tooltip cursor={{ fill: 'rgba(255,255,255,0.04)' }} content={<ProfitTooltip />} />
                 <Bar dataKey="Ganancia" fill="#22C55E" radius={[0, 4, 4, 0]} maxBarSize={26} />
               </BarChart>
             </ResponsiveContainer>
@@ -557,6 +563,23 @@ export default function DashboardPage() {
         </div>
       )}
 
+    </div>
+  )
+}
+
+// ─── Tooltip del top por ganancia (desglose por unidades) ───────────────────────
+function ProfitTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null
+  const d = payload[0].payload
+  const perUnit = d.units > 0 ? Math.round(d.Ganancia / d.units) : d.Ganancia
+  return (
+    <div className="rounded-lg border border-neutral-700 bg-[#12121e] px-3 py-2 text-xs shadow-xl">
+      <p className="text-white font-medium mb-1">{d.name}</p>
+      <p className="text-neutral-400">Unidades vendidas: <span className="text-white">{d.units}</span></p>
+      <p className="text-neutral-400">Ingresos: <span className="text-gold-400">ARS {formatMoney(d.revenue)}</span></p>
+      <p className="text-neutral-400">Costo: <span className="text-neutral-200">ARS {formatMoney(d.cost)}</span></p>
+      <p className="text-neutral-400">Ganancia total: <span className="text-green-400 font-semibold">ARS {formatMoney(d.Ganancia)}</span></p>
+      <p className="text-neutral-500 mt-1">≈ ARS {formatMoney(perUnit)} por unidad · margen {d.margin.toFixed(1)}%</p>
     </div>
   )
 }
