@@ -38,9 +38,9 @@ export interface RevenueByDay {
 export interface TopProduct {
   productName: string
   revenue: number
-  cost: number
-  profit: number
-  margin: number
+  cost: number | null
+  profit: number | null
+  margin: number | null
   quantity: number
 }
 

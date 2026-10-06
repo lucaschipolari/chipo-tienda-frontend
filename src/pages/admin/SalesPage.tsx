@@ -363,8 +363,42 @@ export default function SalesPage() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="rounded-2xl border border-neutral-800 overflow-hidden" style={{ background: 'var(--surface)' }}>
+      {/* Cards (móvil) */}
+      <div className="sm:hidden space-y-3">
+        {isLoading ? (
+          [...Array(5)].map((_, i) => <div key={i} className="h-24 rounded-2xl bg-obsidian-900 border border-neutral-800 animate-pulse" />)
+        ) : data?.items.length === 0 ? (
+          <div className="rounded-2xl border border-neutral-800 px-4 py-12 text-center text-neutral-600" style={{ background: 'var(--surface)' }}>
+            No hay ventas en este período
+          </div>
+        ) : (
+          data?.items.map((sale) => (
+            <button key={sale.id} onClick={() => setDetailId(sale.id)}
+              className="w-full text-left rounded-2xl border border-neutral-800 p-4 active:bg-obsidian-800/40 transition-colors"
+              style={{ background: 'var(--surface)' }}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-mono text-sm text-white">{sale.saleNumber}</p>
+                  <p className="text-sm text-white mt-0.5 truncate">{sale.customerName ?? <span className="text-neutral-600 italic">Sin cliente</span>}</p>
+                </div>
+                <span className="text-gold-400 font-semibold shrink-0">{sale.currency} {formatMoney(sale.total)}</span>
+              </div>
+              <div className="mt-2 flex items-center gap-2 flex-wrap text-xs text-neutral-500">
+                <span className="inline-flex items-center gap-1">{CHANNEL_CONFIG[sale.channel]?.icon}{CHANNEL_CONFIG[sale.channel]?.label ?? sale.channel}</span>
+                <span>·</span>
+                <span className="inline-flex items-center gap-1">{PAYMENT_CONFIG[sale.paymentMethod]?.icon}{PAYMENT_CONFIG[sale.paymentMethod]?.label ?? sale.paymentMethod}</span>
+                <span>·</span>
+                <span>{sale.itemCount} ít.</span>
+                <span>·</span>
+                <span>{new Date(sale.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}</span>
+              </div>
+            </button>
+          ))
+        )}
+      </div>
+
+      {/* Table (desktop) */}
+      <div className="hidden sm:block rounded-2xl border border-neutral-800 overflow-hidden" style={{ background: 'var(--surface)' }}>
         <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-sm">
           <thead className="border-b border-neutral-800">
             <tr>

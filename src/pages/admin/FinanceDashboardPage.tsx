@@ -67,16 +67,20 @@ function TopProductsTable({ rows }: { rows: TopProduct[] }) {
             <tr key={i} className="border-b border-neutral-800 hover:bg-obsidian-900 transition-colors">
               <td className="px-4 py-2.5 text-white font-medium">{r.productName}</td>
               <td className="px-4 py-2.5 text-gold-400 font-mono">ARS {formatMoney(r.revenue)}</td>
-              <td className="px-4 py-2.5 text-neutral-300 font-mono">ARS {formatMoney(r.cost)}</td>
+              <td className="px-4 py-2.5 text-neutral-300 font-mono">{r.cost == null ? '—' : `ARS ${formatMoney(r.cost)}`}</td>
               <td className="px-4 py-2.5 font-mono">
-                <span className={r.profit >= 0 ? 'text-green-400' : 'text-red-400'}>
-                  ARS {formatMoney(r.profit)}
-                </span>
+                {r.profit == null ? <span className="text-neutral-600">s/ costo</span> : (
+                  <span className={r.profit >= 0 ? 'text-green-400' : 'text-red-400'}>
+                    ARS {formatMoney(r.profit)}
+                  </span>
+                )}
               </td>
               <td className="px-4 py-2.5">
-                <span className={`font-semibold ${marginColor(r.margin)}`}>
-                  {pct(r.margin)}
-                </span>
+                {r.margin == null ? <span className="text-neutral-600">—</span> : (
+                  <span className={`font-semibold ${marginColor(r.margin)}`}>
+                    {pct(r.margin)}
+                  </span>
+                )}
               </td>
             </tr>
           ))}

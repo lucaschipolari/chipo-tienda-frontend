@@ -180,11 +180,13 @@ export default function DashboardPage() {
     .slice(0, 7)
     .map(p => ({ name: p.productName, Unidades: p.quantity }))
 
-  // Top productos por ganancia (barras horizontales, con margen)
+  // Top productos por ganancia (barras horizontales, con margen).
+  // Solo los que tienen costo cargado (ganancia real); los sin costo se excluyen.
   const profitBars = [...(fin?.topProducts ?? [])]
-    .sort((a, b) => b.profit - a.profit)
+    .filter(p => p.profit != null)
+    .sort((a, b) => (b.profit ?? 0) - (a.profit ?? 0))
     .slice(0, 7)
-    .map(p => ({ name: p.productName, Ganancia: Math.round(p.profit), margin: p.margin }))
+    .map(p => ({ name: p.productName, Ganancia: Math.round(p.profit ?? 0), margin: p.margin ?? 0 }))
 
   const truncate = (s: string, n = 18) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
   const compact = (n: number) =>
