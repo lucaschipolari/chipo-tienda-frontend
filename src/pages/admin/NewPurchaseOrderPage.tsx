@@ -15,10 +15,11 @@ import { useNavigate, Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   ArrowLeft, ShoppingBag, Search, Plus, Minus, Trash2,
-  Building2, X, Package, Calendar, DollarSign, FileText,
+  Building2, X, Package, Calendar, DollarSign, FileText, LayoutGrid, List as ListIcon,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button/Button'
 import { cn }    from '@/utils/helpers/cn'
+import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { useSuppliers } from '@/features/suppliers/hooks/useSuppliers'
 import { useProducts, useProduct } from '@/features/products/hooks/useProducts'
 import { useCreatePurchaseOrder, useUpdatePurchaseOrder, usePurchaseOrder } from '@/features/purchases/hooks/usePurchases'
@@ -49,6 +50,7 @@ interface POItem {
   attributes:  Record<string, string>
   quantity:    number
   unitCost:    number
+  imageUrl?:   string
 }
 
 // ─── SupplierSearch ───────────────────────────────────────────────────────────
@@ -203,6 +205,7 @@ function ProductSearch({ onAdd, currency }: { onAdd: (item: POItem) => void; cur
       attributes:  variant.attributes,
       quantity:    1,
       unitCost:    isNaN(unitCost) ? 0 : unitCost,
+      imageUrl:    selectedBase.mainImageUrl ?? undefined,
     })
     clearSelection()
   }
@@ -351,13 +354,18 @@ function POItemRow({
 
   return (
     <div className="px-5 py-4 flex items-start gap-3">
+      <div className="h-11 w-11 shrink-0 rounded-lg overflow-hidden bg-obsidian-800 border border-neutral-800 flex items-center justify-center">
+        {item.imageUrl
+          ? <img src={item.imageUrl} alt={item.productName} className="h-full w-full object-cover" onError={e => { e.currentTarget.style.display = 'none' }} />
+          : <Package className="h-4 w-4 text-neutral-700" />}
+      </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-white truncate">{item.productName}</p>
         {attrs && <p className="text-xs text-neutral-500 mt-0.5">{attrs}</p>}
         <p className="text-xs text-neutral-600 mt-0.5">SKU: {item.variantSku}</p>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
         {/* Qty controls */}
         <div className="flex items-center gap-1">
           <button
@@ -416,6 +424,58 @@ function POItemRow({
   )
 }
 
+// ─── Item en vista cuadrícula ───────────────────────────────────────────────────
+function POItemCard({
+  item, currency, onQtyChange, onCostChange, onRemove,
+}: {
+  item: POItem; currency: string
+  onQtyChange: (qty: number) => void; onCostChange: (cost: number) => void; onRemove: () => void
+}) {
+  const attrs = Object.entries(item.attributes).map(([k, v]) => `${k}: ${v}`).join(' / ')
+  const lineTotal = item.quantity * item.unitCost
+  return (
+    <div className="rounded-xl border border-neutral-800 bg-obsidian-900 p-3 flex flex-col gap-2">
+      <div className="flex items-start gap-2">
+        <div className="h-12 w-12 shrink-0 rounded-lg overflow-hidden bg-obsidian-800 border border-neutral-800 flex items-center justify-center">
+          {item.imageUrl
+            ? <img src={item.imageUrl} alt={item.productName} className="h-full w-full object-cover" onError={e => { e.currentTarget.style.display = 'none' }} />
+            : <Package className="h-4 w-4 text-neutral-700" />}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-white line-clamp-2 leading-snug">{item.productName}</p>
+          {attrs && <p className="text-xs text-neutral-500 mt-0.5 truncate">{attrs}</p>}
+        </div>
+        <button onClick={onRemove} className="p-1 rounded-lg hover:bg-red-500/10 text-neutral-500 hover:text-red-400 transition-colors">
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1">
+          <button onClick={() => onQtyChange(item.quantity - 1)} disabled={item.quantity <= 1}
+            className={cn('p-1 rounded-lg transition-colors', item.quantity <= 1 ? 'bg-obsidian-800 text-neutral-700' : 'bg-obsidian-800 hover:bg-obsidian-700 text-neutral-400')}>
+            <Minus className="h-3 w-3" />
+          </button>
+          <input type="number" min={1} value={item.quantity}
+            onChange={e => onQtyChange(Math.max(1, parseInt(e.target.value) || 1))}
+            className="w-10 text-center bg-obsidian-950 border border-neutral-800 rounded-lg py-1 text-sm text-white focus:outline-none focus:ring-1 focus:ring-gold-500" />
+          <button onClick={() => onQtyChange(item.quantity + 1)}
+            className="p-1 rounded-lg bg-obsidian-800 hover:bg-obsidian-700 text-neutral-400 transition-colors">
+            <Plus className="h-3 w-3" />
+          </button>
+        </div>
+        <div className="relative">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-neutral-500">{currency}</span>
+          <input type="number" min={0} step={0.01} value={item.unitCost}
+            onChange={e => onCostChange(parseFloat(e.target.value) || 0)}
+            className="w-24 pl-9 pr-2 py-1 bg-obsidian-950 border border-neutral-800 rounded-lg text-sm text-white text-right focus:outline-none focus:ring-1 focus:ring-gold-500" />
+        </div>
+      </div>
+      <div className="text-right text-sm font-semibold text-gold-400">{currency} {formatMoney(lineTotal)}</div>
+    </div>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function NewPurchaseOrderPage() {
@@ -431,6 +491,7 @@ export default function NewPurchaseOrderPage() {
   const [currency,       setCurrency]       = useState('ARS')
   const [notes,          setNotes]          = useState('')
   const [items,          setItems]          = useState<POItem[]>([])
+  const [itemsView,      setItemsView]      = useLocalStorage<'list' | 'grid'>('po-items-view', 'list')
 
   // Prefill en modo edición (solo una vez, cuando llega el detalle)
   const prefilled = useRef(false)
@@ -488,6 +549,9 @@ export default function NewPurchaseOrderPage() {
 
   const subtotal = items.reduce((sum, i) => sum + i.quantity * i.unitCost, 0)
   const total    = subtotal  // no tax in PO for now
+  const totalUnits = items.reduce((sum, i) => sum + i.quantity, 0)
+  // Orden alfabético por nombre para mostrar (no afecta el estado ni el guardado)
+  const sortedItems = [...items].sort((a, b) => a.productName.localeCompare(b.productName, 'es'))
 
   // ── Submit ────────────────────────────────────────────────────────────────
 
@@ -652,24 +716,51 @@ export default function NewPurchaseOrderPage() {
             className="rounded-2xl border border-neutral-800 overflow-hidden"
             style={{ background: 'var(--surface)' }}
           >
-            <div className="px-5 py-3 border-b border-neutral-800 flex items-center justify-between">
+            <div className="px-5 py-3 border-b border-neutral-800 flex items-center justify-between gap-2">
               <h2 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">
                 Ítems de la orden
               </h2>
-              {items.length > 0 && (
-                <button
-                  onClick={() => setItems([])}
-                  className="text-xs text-neutral-600 hover:text-red-400 transition-colors flex items-center gap-1"
-                >
-                  <Trash2 className="h-3 w-3" /> Limpiar
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {items.length > 0 && (
+                  <div className="flex items-center rounded-lg border border-neutral-800 bg-obsidian-900 p-0.5">
+                    <button onClick={() => setItemsView('list')} title="Lista"
+                      className={cn('p-1 rounded-md transition-colors', itemsView === 'list' ? 'bg-obsidian-700 text-gold-400' : 'text-neutral-500 hover:text-neutral-200')}>
+                      <ListIcon className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => setItemsView('grid')} title="Cuadrícula"
+                      className={cn('p-1 rounded-md transition-colors', itemsView === 'grid' ? 'bg-obsidian-700 text-gold-400' : 'text-neutral-500 hover:text-neutral-200')}>
+                      <LayoutGrid className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+                {items.length > 0 && (
+                  <button
+                    onClick={() => setItems([])}
+                    className="text-xs text-neutral-600 hover:text-red-400 transition-colors flex items-center gap-1"
+                  >
+                    <Trash2 className="h-3 w-3" /> Limpiar
+                  </button>
+                )}
+              </div>
             </div>
 
             {items.length === 0 ? (
               <div className="px-5 py-12 text-center text-neutral-600 text-sm">
                 No hay productos agregados.<br />
                 <span className="text-neutral-700 text-xs">Busca un producto arriba para agregarlo.</span>
+              </div>
+            ) : itemsView === 'grid' ? (
+              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {sortedItems.map(item => (
+                  <POItemCard
+                    key={item.key}
+                    item={item}
+                    currency={currency}
+                    onQtyChange={qty  => setQty(item.key, qty)}
+                    onCostChange={cost => setCost(item.key, cost)}
+                    onRemove={() => removeItem(item.key)}
+                  />
+                ))}
               </div>
             ) : (
               <>
@@ -684,7 +775,7 @@ export default function NewPurchaseOrderPage() {
                   </div>
                 </div>
                 <div className="divide-y divide-neutral-800/50">
-                  {items.map(item => (
+                  {sortedItems.map(item => (
                     <POItemRow
                       key={item.key}
                       item={item}
@@ -726,8 +817,12 @@ export default function NewPurchaseOrderPage() {
 
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-neutral-400">
-                <span>Ítems</span>
+                <span>Renglones</span>
                 <span>{items.length}</span>
+              </div>
+              <div className="flex justify-between text-neutral-400">
+                <span>Perfumes (unidades)</span>
+                <span className="text-white font-medium">{totalUnits}</span>
               </div>
               <div className="flex justify-between text-neutral-400">
                 <span>Subtotal</span>

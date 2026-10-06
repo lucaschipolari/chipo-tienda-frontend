@@ -434,8 +434,44 @@ export default function OrdersAdminPage() {
         />
       </div>
 
-      {/* Table */}
-      <div className="rounded-2xl border border-neutral-800 overflow-hidden" style={{ background: 'var(--surface)' }}>
+      {/* Cards (móvil) */}
+      <div className="sm:hidden space-y-3">
+        {isLoading ? (
+          [...Array(5)].map((_, i) => <div key={i} className="h-28 rounded-2xl bg-obsidian-900 border border-neutral-800 animate-pulse" />)
+        ) : !data || data.items.length === 0 ? (
+          <div className="rounded-2xl border border-neutral-800 px-4 py-12 text-center text-neutral-600" style={{ background: 'var(--surface)' }}>
+            No se encontraron pedidos
+          </div>
+        ) : (
+          data.items.map(order => (
+            <button
+              key={order.id}
+              onClick={() => setDetailId(order.id)}
+              className="w-full text-left rounded-2xl border border-neutral-800 p-4 active:bg-obsidian-800/40 transition-colors"
+              style={{ background: 'var(--surface)' }}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-mono text-sm text-white">{order.orderNumber}</p>
+                  <p className="text-sm text-white mt-0.5 truncate">{order.buyerName}</p>
+                  {order.buyerEmail && <p className="text-xs text-neutral-500 truncate">{order.buyerEmail}</p>}
+                </div>
+                <StatusBadge status={order.status} />
+              </div>
+              <div className="mt-3 flex items-center justify-between text-sm">
+                <span className="text-neutral-500 text-xs">
+                  {order.itemCount} {order.itemCount === 1 ? 'producto' : 'productos'} ·{' '}
+                  {new Date(order.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}
+                </span>
+                <span className="text-gold-400 font-semibold">{order.currency} {formatMoney(order.total)}</span>
+              </div>
+            </button>
+          ))
+        )}
+      </div>
+
+      {/* Table (desktop) */}
+      <div className="hidden sm:block rounded-2xl border border-neutral-800 overflow-hidden" style={{ background: 'var(--surface)' }}>
         <table className="w-full text-sm">
           <thead className="border-b border-neutral-800">
             <tr>
