@@ -170,7 +170,7 @@ export default function HomePage() {
           </div>
 
           {/* Categorías — scroll horizontal en mobile, centradas en desktop */}
-          <div className="mt-3 flex gap-2.5 overflow-x-auto pb-1 sm:flex-wrap sm:justify-center sm:gap-2 sm:overflow-visible">
+          <div className="mt-3 flex gap-2.5 overflow-x-auto py-1 sm:flex-wrap sm:justify-center sm:gap-2 sm:overflow-visible">
             <button
               onClick={() => setCategoryId('')}
               className={cn(
@@ -196,7 +196,7 @@ export default function HomePage() {
 
           {/* Estación y Ocasión */}
           <div className="mt-3.5 flex flex-col gap-3 sm:mt-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-4 sm:gap-y-2">
-            <div className="flex items-center gap-2.5 overflow-x-auto pb-1 sm:gap-1.5 sm:overflow-visible">
+            <div className="flex items-center gap-2.5 overflow-x-auto py-1 sm:gap-1.5 sm:overflow-visible">
               <span className="shrink-0 text-[10px] uppercase tracking-[0.2em] text-neutral-600">Estación</span>
               {SEASONS.map(sObj => (
                 <button
@@ -211,7 +211,7 @@ export default function HomePage() {
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-2.5 overflow-x-auto pb-1 sm:gap-1.5 sm:overflow-visible">
+            <div className="flex items-center gap-2.5 overflow-x-auto py-1 sm:gap-1.5 sm:overflow-visible">
               <span className="shrink-0 text-[10px] uppercase tracking-[0.2em] text-neutral-600">Ocasión</span>
               {OCCASIONS.map(o => (
                 <button
