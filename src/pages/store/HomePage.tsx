@@ -170,7 +170,7 @@ export default function HomePage() {
           </div>
 
           {/* Categorías — scroll horizontal en mobile, centradas en desktop */}
-          <div className="mt-3 flex gap-2.5 overflow-x-auto py-1 sm:flex-wrap sm:justify-center sm:gap-2 sm:overflow-visible">
+          <div className="mt-3 flex gap-2 overflow-x-auto py-1 sm:flex-wrap sm:justify-center sm:overflow-visible">
             <button
               onClick={() => setCategoryId('')}
               className={cn(
@@ -195,15 +195,15 @@ export default function HomePage() {
           </div>
 
           {/* Estación y Ocasión */}
-          <div className="mt-3.5 flex flex-col gap-3 sm:mt-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-4 sm:gap-y-2">
-            <div className="flex items-center gap-2.5 overflow-x-auto py-1 sm:gap-1.5 sm:overflow-visible">
+          <div className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-4">
+            <div className="flex items-center gap-1.5 overflow-x-auto py-1 sm:overflow-visible">
               <span className="shrink-0 text-[10px] uppercase tracking-[0.2em] text-neutral-600">Estación</span>
               {SEASONS.map(sObj => (
                 <button
                   key={sObj.value}
                   onClick={() => setSeason(season === sObj.value ? '' : sObj.value)}
                   className={cn(
-                    'shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[11px] font-medium ring-1 transition-all sm:px-3 sm:py-1',
+                    'shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-medium ring-1 transition-all',
                     season === sObj.value ? 'bg-gold-500 text-black ring-gold-500' : 'text-neutral-400 ring-white/15 hover:text-white hover:ring-white/40',
                   )}
                 >
@@ -211,14 +211,14 @@ export default function HomePage() {
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-2.5 overflow-x-auto py-1 sm:gap-1.5 sm:overflow-visible">
+            <div className="flex items-center gap-1.5 overflow-x-auto py-1 sm:overflow-visible">
               <span className="shrink-0 text-[10px] uppercase tracking-[0.2em] text-neutral-600">Ocasión</span>
               {OCCASIONS.map(o => (
                 <button
                   key={o}
                   onClick={() => setOccasion(occasion === o ? '' : o)}
                   className={cn(
-                    'shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[11px] font-medium ring-1 transition-all sm:px-3 sm:py-1',
+                    'shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-medium ring-1 transition-all',
                     occasion === o ? 'bg-gold-500 text-black ring-gold-500' : 'text-neutral-400 ring-white/15 hover:text-white hover:ring-white/40',
                   )}
                 >
