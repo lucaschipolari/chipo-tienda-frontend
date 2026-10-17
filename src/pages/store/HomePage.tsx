@@ -10,6 +10,15 @@ import { ComboSection } from '@/components/store/ComboSection'
 import { track, analyticsService } from '@/features/analytics/analyticsService'
 import { useQuery } from '@tanstack/react-query'
 
+// Estaciones y ocasiones (coinciden con los valores del admin)
+const SEASONS = [
+  { value: 'Primavera', icon: '🌸' },
+  { value: 'Verano',    icon: '☀️' },
+  { value: 'Otoño',     icon: '🍂' },
+  { value: 'Invierno',  icon: '❄️' },
+]
+const OCCASIONS = ['Día', 'Noche', 'Formal', 'Casual']
+
 // ─── Sección de confianza / originalidad ───────────────────────────────────────
 
 function TrustSection() {
@@ -83,6 +92,8 @@ function TrustSection() {
 export default function HomePage() {
   const [search, setSearch] = useState('')
   const [categoryId, setCategoryId] = useState('')
+  const [season, setSeason] = useState('')
+  const [occasion, setOccasion] = useState('')
   const [sortBy, setSortBy] = useState('relevant')
   const [visible, setVisible] = useState(24)   // cuántos productos se muestran (botón "Ver más")
   const debounced = useDebounce(search, 300)
@@ -98,11 +109,13 @@ export default function HomePage() {
     pageSize: 500,   // traemos todo el catálogo publicado y paginamos en cliente con "Ver más"
     categoryId: categoryId || undefined,
     search: debounced.trim() || undefined,
+    season: season || undefined,
+    occasion: occasion || undefined,
     status: 'Published',
   })
 
   // Reiniciar la cantidad visible cuando cambian los filtros/orden
-  useEffect(() => { setVisible(24) }, [debounced, categoryId, sortBy])
+  useEffect(() => { setVisible(24) }, [debounced, categoryId, season, occasion, sortBy])
 
   // Registrar búsquedas (una vez por término, cuando llegan resultados)
   const lastTracked = useRef<string>('')
@@ -181,6 +194,40 @@ export default function HomePage() {
             ))}
           </div>
 
+          {/* Estación y Ocasión */}
+          <div className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-4">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 sm:overflow-visible">
+              <span className="shrink-0 text-[10px] uppercase tracking-[0.2em] text-neutral-600">Estación</span>
+              {SEASONS.map(sObj => (
+                <button
+                  key={sObj.value}
+                  onClick={() => setSeason(season === sObj.value ? '' : sObj.value)}
+                  className={cn(
+                    'shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-medium ring-1 transition-all',
+                    season === sObj.value ? 'bg-gold-500 text-black ring-gold-500' : 'text-neutral-400 ring-white/15 hover:text-white hover:ring-white/40',
+                  )}
+                >
+                  {sObj.icon} {sObj.value}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 sm:overflow-visible">
+              <span className="shrink-0 text-[10px] uppercase tracking-[0.2em] text-neutral-600">Ocasión</span>
+              {OCCASIONS.map(o => (
+                <button
+                  key={o}
+                  onClick={() => setOccasion(occasion === o ? '' : o)}
+                  className={cn(
+                    'shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-medium ring-1 transition-all',
+                    occasion === o ? 'bg-gold-500 text-black ring-gold-500' : 'text-neutral-400 ring-white/15 hover:text-white hover:ring-white/40',
+                  )}
+                >
+                  {o}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Ordenar */}
           <div className="mt-2 flex items-center justify-end gap-2">
             <span className="text-[11px] text-neutral-500">Ordenar:</span>
@@ -199,7 +246,7 @@ export default function HomePage() {
       </div>
 
       {/* ── Combos ── */}
-      {!search && !categoryId && <ComboSection />}
+      {!search && !categoryId && !season && !occasion && <ComboSection />}
 
       {/* ── Catálogo comprable ── */}
       <section className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -219,9 +266,9 @@ export default function HomePage() {
             <Package className="mb-4 h-12 w-12 text-neutral-700" />
             <p className="text-lg font-medium text-white">No encontramos esa fragancia</p>
             <p className="mt-1 text-sm text-neutral-500">Probá con otra búsqueda o mirá toda la colección.</p>
-            {(search || categoryId) && (
+            {(search || categoryId || season || occasion) && (
               <button
-                onClick={() => { setSearch(''); setCategoryId('') }}
+                onClick={() => { setSearch(''); setCategoryId(''); setSeason(''); setOccasion('') }}
                 className="mt-6 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-neutral-200"
               >
                 Ver todo

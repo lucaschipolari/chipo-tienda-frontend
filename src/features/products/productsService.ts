@@ -18,6 +18,8 @@ export interface GetProductsParams {
   categoryId?: string
   search?: string
   status?: ProductStatus | ''
+  season?: string
+  occasion?: string
 }
 
 export const productsService = {
