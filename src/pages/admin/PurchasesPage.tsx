@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   Plus, Eye, ShoppingBag, Package, Truck, X, CheckCircle,
-  XCircle, Clock, Send, ThumbsUp, ClipboardCheck, Pencil,
+  XCircle, Clock, Send, ThumbsUp, ClipboardCheck, Pencil, Copy,
 } from 'lucide-react'
 import { Button }     from '@/components/ui/Button/Button'
 import { Modal }      from '@/components/ui/Modal/Modal'
@@ -274,6 +274,19 @@ function PurchaseDetail({
   const fmtDate = (d: string) =>
     new Date(d).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })
 
+  // Texto del pedido para copiar y mandar al proveedor por WhatsApp
+  const copyOrder = async () => {
+    const text = po.items
+      .map(i => `-${i.productName ?? 'Producto'} x${i.quantity}`)
+      .join('\n')
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success('Pedido copiado — listo para pegar en WhatsApp')
+    } catch {
+      toast.error('No se pudo copiar automáticamente.')
+    }
+  }
+
   return (
     <div className="space-y-5">
       {/* Encabezado */}
@@ -281,6 +294,10 @@ function PurchaseDetail({
         <span className="font-mono text-lg text-white">{po.purchaseNumber}</span>
         <StatusBadge status={po.status} />
         <span className="text-xs text-neutral-500">Creada el {fmtDate(po.createdAt)}</span>
+        <Button size="sm" variant="outline" onClick={copyOrder}
+          leftIcon={<Copy className="h-3.5 w-3.5" />} className="ml-auto">
+          Copiar pedido
+        </Button>
       </div>
 
       {/* Layout responsive: en desktop 2 columnas (ítems | resumen), en móvil apilado */}
