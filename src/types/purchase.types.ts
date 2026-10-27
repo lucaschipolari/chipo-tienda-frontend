@@ -10,6 +10,7 @@ export interface PurchaseOrderItem {
   id: string
   productId: string
   productName?: string
+  imageUrl?: string
   variantId: string
   variantSku?: string
   quantity: number

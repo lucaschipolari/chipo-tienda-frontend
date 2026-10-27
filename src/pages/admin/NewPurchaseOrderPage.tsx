@@ -511,6 +511,7 @@ export default function NewPurchaseOrderPage() {
       attributes:  {},
       quantity:    it.quantity,
       unitCost:    it.unitCost,
+      imageUrl:    it.imageUrl ?? undefined,
     })))
   }, [isEdit, existing])
 
