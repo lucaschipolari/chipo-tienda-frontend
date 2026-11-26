@@ -26,6 +26,7 @@ const ROUTE_LABELS: Record<string, string> = {
   finances: 'Finanzas',
   finance: 'Finanzas',
   profitability: 'Rentabilidad',
+  'pricing-calculator': 'Calculadora',
   analytics: 'Analítica',
   combos: 'Combos',
   reports: 'Reportes',

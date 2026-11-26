@@ -510,6 +510,7 @@ function sourceLabel(source: string) {
   switch (source) {
     case 'PurchaseReceipt': return 'Compra recibida'
     case 'ManualEdit': return 'Edición manual'
+    case 'PricingCalculator': return 'Calculadora'
     case 'Initial': return 'Carga inicial'
     default: return source
   }
