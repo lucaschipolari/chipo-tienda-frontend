@@ -52,6 +52,7 @@ const NewSupplierPage     = lazy(() => import('@/pages/admin/NewSupplierPage'))
 const ExpensesPage        = lazy(() => import('@/pages/admin/ExpensesPage'))
 const FinancesPage        = lazy(() => import('@/pages/admin/FinanceDashboardPage'))
 const ProfitabilityPage   = lazy(() => import('@/pages/admin/ProfitabilityPage'))
+const PricingCalculatorPage = lazy(() => import('@/pages/admin/PricingCalculatorPage'))
 const AnalyticsPage       = lazy(() => import('@/pages/admin/AnalyticsPage'))
 const CombosPage          = lazy(() => import('@/pages/admin/CombosPage'))
 const ReportsPage         = lazy(() => import('@/pages/admin/ReportsPage'))
@@ -138,6 +139,7 @@ export const router = createBrowserRouter([
               { path: '/admin/expenses', element: withSuspense(ExpensesPage) },
               { path: '/admin/finance',  element: withSuspense(FinancesPage) },
               { path: '/admin/profitability', element: withSuspense(ProfitabilityPage) },
+              { path: '/admin/pricing-calculator', element: withSuspense(PricingCalculatorPage) },
               { path: '/admin/analytics', element: withSuspense(AnalyticsPage) },
               { path: '/admin/reports',  element: withSuspense(ReportsPage) },
 
